@@ -1,0 +1,154 @@
+/*
+ * buoyant_fluid_solver.cc
+ *
+ *  Created on: Nov 8, 2018
+ *      Author: sg
+ */
+
+#include <deal.II/base/parameter_handler.h>
+
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/dofs/dof_renumbering.h>
+
+#include <deal.II/fe/fe_nedelec.h>
+#include <deal.II/fe/fe_nothing.h>
+#include <deal.II/fe/fe_q.h>
+
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+#include <deal.II/grid/grid_refinement.h>
+
+#include <deal.II/lac/solver_gmres.h>
+
+#include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/error_estimator.h>
+#include <deal.II/numerics/solution_transfer.h>
+#include <deal.II/numerics/vector_tools.h>
+
+#include "solver.h"
+#include "postprocessor.h"
+
+namespace TopographyProblem {
+
+template<>
+TopographySolver<3>::TopographySolver(Parameters &parameters_)
+:
+parameters(parameters_),
+rotation_vector(Point<3>::unit_vector(2)),
+gravity_vector(-Point<3>::unit_vector(2)),
+background_velocity_value(Point<3>::unit_vector(0)),
+background_field_value(Point<3>::unit_vector(2)),
+background_density_gradient(-Point<3>::unit_vector(2)),
+background_velocity_gradient(),
+background_field_gradient(),
+// coefficients
+equation_coefficients{parameters.stratificationNumber,
+                      1./parameters.Rossby,
+                      1. / parameters.Froude / parameters.Froude,
+                      parameters.Alfven * parameters.Alfven,
+                      parameters.magReynolds},
+// triangulation
+triangulation(),
+// finite element part
+fe_system(FE_Q<3>(parameters.density_degree), 1,
+          FESystem<3>(FE_Q<3>(parameters.velocity_degree), 3), 1,
+          FE_Q<3>(parameters.velocity_degree - 1), 1,
+          FESystem<3>(FE_Q<3>(parameters.magnetic_degree), 3), 1,
+          FE_Q<3>(parameters.magnetic_degree), 1),
+dof_handler(triangulation),
+// monitor
+computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
+{}
+
+template<int dim>
+void TopographySolver<dim>::output_results(const unsigned int level) const
+{
+    std::cout << "   Output results..." << std::endl;
+
+    PostProcessor<dim>  postprocessor;
+
+    // prepare data out object
+    DataOut<dim, DoFHandler<dim>>    data_out;
+    data_out.attach_dof_handler(dof_handler);
+    data_out.add_data_vector(present_solution, postprocessor);
+
+    data_out.build_patches();
+
+    // write output to disk
+    const std::string filename = ("solution-" +
+                                  Utilities::int_to_string(level, 2) +
+                                  ".vtk");
+    std::ofstream output(filename.c_str());
+    data_out.write_vtk(output);
+}
+
+template<int dim>
+void TopographySolver<dim>::refine_mesh()
+{
+    TimerOutput::Scope timer_section(computing_timer, "refine mesh");
+
+    std::cout << "   Mesh refinement..." << std::endl;
+
+    // error estimation based on temperature
+    Vector<float>   estimated_error_per_cell(triangulation.n_active_cells());
+    const FEValuesExtractors::Vector    velocity(1);
+
+    KellyErrorEstimator<dim>::estimate(dof_handler,
+                                       QGauss<dim-1>(parameters.velocity_degree + 1),
+                                       typename FunctionMap<dim>::type(),
+                                       present_solution,
+                                       estimated_error_per_cell,
+                                       fe_system.component_mask(velocity));
+    // set refinement flags
+    GridRefinement::refine_and_coarsen_fixed_fraction(triangulation,
+                                                      estimated_error_per_cell,
+                                                      0.7, 0.3);
+
+    // preparing temperature solution transfer
+    std::vector<BlockVector<double>> x_solution(2);
+    x_solution[0] = present_solution;
+    x_solution[1] = evaluation_point;
+    SolutionTransfer<dim,BlockVector<double>> solution_transfer(dof_handler);
+
+    // preparing triangulation refinement
+    triangulation.prepare_coarsening_and_refinement();
+    solution_transfer.prepare_for_coarsening_and_refinement(x_solution);
+
+    // refine triangulation
+    triangulation.execute_coarsening_and_refinement();
+
+    // setup dofs and constraints on refined mesh
+    setup_dofs();
+
+    // transfer of solution
+    {
+        std::vector<BlockVector<double>> tmp_solution(2);
+        tmp_solution[0].reinit(present_solution);
+        tmp_solution[1].reinit(present_solution);
+        solution_transfer.interpolate(x_solution, tmp_solution);
+
+        present_solution = tmp_solution[0];
+        evaluation_point = tmp_solution[1];
+
+        nonzero_constraints.distribute(present_solution);
+        nonzero_constraints.distribute(evaluation_point);
+    }
+}
+
+
+template<int dim>
+void TopographySolver<dim>::run()
+{
+    make_grid();
+
+    newton_iteration(1e-1, 1, true);
+
+    output_results();
+
+    refine_mesh();
+}
+}  // namespace TopographyProblem
+
+// explicit instantiation
+template class TopographyProblem::TopographySolver<3>;
