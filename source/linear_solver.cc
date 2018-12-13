@@ -12,21 +12,21 @@
 namespace TopographyProblem {
 
 template<int dim>
-void TopographySolver<dim>::solve(const bool initial_step)
+void TopographySolver<dim>::solve()
 {
     std::cout << "   Solving linear system..." << std::endl;
 
-    const ConstraintMatrix  &constraints_used
-        = initial_step ? nonzero_constraints : zero_constraints;
+    TimerOutput::Scope timer_section(computing_timer, "linear solve");
 
     SparseDirectUMFPACK     direct_solver;
     direct_solver.solve(system_matrix, system_rhs);
 
-    newton_update = system_rhs;
-    constraints_used.distribute(newton_update);
+    solution = system_rhs;
+    constraints.distribute(solution);
 }
 
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<3>::solve(const bool);
+template void TopographyProblem::TopographySolver<2>::solve();
+template void TopographyProblem::TopographySolver<3>::solve();

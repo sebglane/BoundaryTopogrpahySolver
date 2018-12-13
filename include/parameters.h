@@ -25,6 +25,7 @@ struct Parameters
     // runtime parameters
 //    bool    workstream_assembly;
     bool    read_dimensional_input;
+    bool    homogeneous_bc_at_bottom;
 
     // mesh parameters
     double amplitude;
@@ -34,28 +35,21 @@ struct Parameters
     double buoyancy_frequency;
     double magnetic_diffusivity;
 
-    double reference_rotation_rate;
-    double reference_density;
     double reference_velocity;
-    double reference_field;
     double reference_gravity;
 
     // dimensionless physics parameters
-    double Alfven;
     double Froude;
-    double magReynolds;
-    double Rossby;
-    double stratificationNumber;
+    double S;
 
     // linear solver parameters
-    double rel_tol;
-    double abs_tol;
-    unsigned int n_max_iter;
+    double          rel_tol;
+    double          abs_tol;
+    unsigned int    n_max_iter;
 
     // discretization parameters
     unsigned int density_degree;
     unsigned int velocity_degree;
-    unsigned int magnetic_degree;
 
     // refinement parameters
     unsigned int n_refinements;

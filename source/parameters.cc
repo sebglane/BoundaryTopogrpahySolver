@@ -12,15 +12,13 @@ namespace TopographyProblem {
 Parameters::Parameters(const std::string &parameter_filename)
 :
 read_dimensional_input(false),
+homogeneous_bc_at_bottom(true),
 // geometry parameters
 wave_length(1e5),
 amplitude(50),
 // physics parameters
-Alfven(1.0),
 Froude(1.0),
-magReynolds(1.0),
-Rossby(1.0),
-stratificationNumber(1.0),
+S(1.0),
 // linear solver parameters
 rel_tol(1e-6),
 abs_tol(1e-12),
@@ -28,7 +26,6 @@ n_max_iter(100),
 // discretization parameters
 density_degree(1),
 velocity_degree(2),
-magnetic_degree(1),
 // refinement parameters
 n_refinements(1),
 n_initial_refinements(4),
@@ -88,40 +85,26 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                           Patterns::Bool(),
                           "program reads dimensional parameter and computes"
                           "dimensionless numbers");
+
+        prm.declare_entry("homogeneous_bc_at_bottom",
+                          "true",
+                          Patterns::Bool(),
+                          "applies a homogeneous Dirichlet boundary condition"
+                          "at the bottom boundary");
     }
     prm.leave_subsection();
 
     prm.enter_subsection("dimensional physics parameters");
     {
-        prm.declare_entry("magnetic_diffusivity",
-                "0.8e-2",
-                Patterns::Double(0.),
-                "magnetic diffusivity in m^2 / s");
-
         prm.declare_entry("buoyancy_frequency",
                 "0.729e-4",
                 Patterns::Double(0.),
                 "buoyancy frequency in 1 / s");
 
-        prm.declare_entry("reference_rotation_rate",
-                "0.729e-4",
-                Patterns::Double(0.),
-                "planetary rotation rate in 1 / s");
-
-        prm.declare_entry("reference_density",
-                "1.0e4",
-                Patterns::Double(0.),
-                "fluid density in kg / m^3");
-
         prm.declare_entry("reference_velocity",
                 "5.0e4",
                 Patterns::Double(0.),
                 "fluid velocity in m / s");
-
-        prm.declare_entry("reference_field",
-                "0.65e-3",
-                Patterns::Double(0.),
-                "magnetic field in T");
 
         prm.declare_entry("reference_gravity",
                 "10.0",
@@ -142,11 +125,6 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 "1",
                 Patterns::Integer(1,2),
                 "Polynomial degree of the density discretization.");
-
-        prm.declare_entry("magnetic_degree",
-                "1",
-                Patterns::Integer(1,2),
-                "Polynomial degree of the magnetic discretization.");
 
         prm.enter_subsection("refinement parameters");
         {
@@ -171,30 +149,16 @@ void Parameters::declare_parameters(ParameterHandler &prm)
 
     prm.enter_subsection("dimensionless physics parameters");
     {
-        prm.declare_entry("Rossby",
-                "1.0",
-                Patterns::Double(0.),
-                "Rossby number");
-
         prm.declare_entry("Froude",
                 "1.0",
                 Patterns::Double(0.),
                 "Froude number");
 
-        prm.declare_entry("magReynolds",
-                "1.0e-3",
-                Patterns::Double(),
-                "magnetic Reynolds number");
-
         prm.declare_entry("stratification_number",
                 "1.0e-3",
                 Patterns::Double(),
-                "N^2 l / g : dimensionless number describing strength of stratification");
+                "dimensionless number describing strength of stratification: N^2 l / g ");
 
-        prm.declare_entry("Alfven",
-                "1.0e-3",
-                Patterns::Double(),
-                "Alfven number. Va / V, ratio of Alfven velocity to fluid velocity");
     }
     prm.leave_subsection();
 
@@ -230,6 +194,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     prm.enter_subsection("runtime parameters");
     {
         read_dimensional_input = prm.get_bool("read_dimensional_input");
+        homogeneous_bc_at_bottom = prm.get_bool("homogeneous_bc_at_bottom");
     }
     prm.leave_subsection();
 
@@ -253,17 +218,12 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
         prm.enter_subsection("dimensional physics parameters");
         {
-            magnetic_diffusivity = prm.get_double("magnetic_diffusivity");
             buoyancy_frequency = prm.get_double("buoyancy_frequency");
 
-            reference_rotation_rate = prm.get_double("reference_rotation_rate");
-            reference_density = prm.get_double("reference_density");
             reference_velocity = prm.get_double("reference_velocity");
-            reference_field = prm.get_double("reference_field");
             reference_gravity = prm.get_double("reference_gravity");
 
             compute_dimensionless_numbers();
-
         }
         prm.leave_subsection();
     }
@@ -271,11 +231,8 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     {
         prm.enter_subsection("dimensionless physics parameters");
         {
-            Rossby = prm.get_double("Rossby");
             Froude = prm.get_double("Froude");
-            magReynolds = prm.get_double("magReynolds");
-            Alfven= prm.get_double("Alfven");
-            stratificationNumber = prm.get_double("stratification_number");
+            S = prm.get_double("stratification_number");
 
         }
         prm.leave_subsection();
@@ -293,15 +250,13 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
 void Parameters::compute_dimensionless_numbers()
 {
-    const double magnetic_permeability =  4. * numbers::PI * 1.0e-7;
-    const double alfven_velocity = reference_field
-                                    / std::sqrt(reference_density * magnetic_permeability);
-    Alfven = alfven_velocity / reference_velocity;
-    Froude = reference_velocity / std::sqrt(reference_gravity * wave_length);
-    Rossby = reference_velocity / reference_rotation_rate / wave_length;
-    magReynolds = reference_velocity * wave_length / magnetic_diffusivity;
-    stratificationNumber = buoyancy_frequency * buoyancy_frequency
+    Froude = reference_velocity / std::sqrt(wave_length * reference_gravity);
+    S = buoyancy_frequency * buoyancy_frequency
                             * wave_length / reference_gravity;
+
+    std::cout << "Fr = " << std::setw(6) << Froude << ", "
+              << "Stratification Parameter = " << std::setw(6) << S
+              << std::endl;
 }
 
 

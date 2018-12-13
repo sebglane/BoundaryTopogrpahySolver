@@ -51,18 +51,9 @@ private:
 
     void setup_system_matrix(const std::vector<types::global_dof_index> &dofs_per_block);
 
-    void assemble(const bool initial_step,
-                  const bool assemble_matrix);
+    void assemble_system();
 
-    void assemble_system(const bool initial_step);
-
-    void assemble_rhs(const bool initial_step);
-
-    void solve(const bool initial_step);
-
-    void newton_iteration(const double tolerance,
-                          const unsigned int max_iteration,
-                          const bool is_initial_step);
+    void solve();
 
     void output_results(const unsigned int level = 0) const;
 
@@ -72,13 +63,10 @@ private:
 
     std::vector<double>         equation_coefficients;
 
-    const Tensor<1,dim>         rotation_vector;
     const Tensor<1,dim>         gravity_vector;
     const Tensor<1,dim>         background_velocity_value;
-    const Tensor<1,dim>         background_field_value;
     const Tensor<1,dim>         background_density_gradient;
     const Tensor<2,dim>         background_velocity_gradient;
-    const Tensor<2,dim>         background_field_gradient;
 
     Triangulation<dim>          triangulation;
 
@@ -87,42 +75,18 @@ private:
     DoFHandler<dim>             dof_handler;
 
     // constraints
-    ConstraintMatrix            nonzero_constraints;
-    ConstraintMatrix            zero_constraints;
+    ConstraintMatrix            constraints;
 
     // system matrix
     BlockSparsityPattern        sparsity_pattern;
     BlockSparseMatrix<double>   system_matrix;
 
     // vectors
-    BlockVector<double>         evaluation_point;
-    BlockVector<double>         present_solution;
-    BlockVector<double>         newton_update;
+    BlockVector<double>         solution;
     BlockVector<double>         system_rhs;
 
     // monitor of computing times
     TimerOutput                 computing_timer;
-
-private:
-    /*
-     *
-    // working stream methods
-    void local_assemble_matrix(
-            const typename hp::DoFHandler<dim>::active_cell_iterator &cell,
-            Assembly::Scratch::Matrix<dim>  &scratch,
-            Assembly::CopyData::Matrix<dim> &data);
-    void copy_local_to_global_matrix(
-            const Assembly::CopyData::Matrix<dim> &data);
-
-    void local_assemble_rhs(
-            const typename hp::DoFHandler<dim>::active_cell_iterator &cell,
-            Assembly::Scratch::RightHandSide<dim>   &scratch,
-            Assembly::CopyData::RightHandSide<dim> &data);
-    void copy_local_to_global_rhs(
-            const Assembly::CopyData::RightHandSide<dim> &data);
-     *
-     */
-
 };
 
 }  // namespace BouyantFluid

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
         Parameters  parameters(parameter_filename);
 
-        TopographySolver<3> problem(parameters);
+        TopographySolver<2> problem(parameters);
         problem.run();
 
     }

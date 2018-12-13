@@ -31,31 +31,23 @@
 
 namespace TopographyProblem {
 
-template<>
-TopographySolver<3>::TopographySolver(Parameters &parameters_)
+template<int dim>
+TopographySolver<dim>::TopographySolver(Parameters &parameters_)
 :
 parameters(parameters_),
-rotation_vector(Point<3>::unit_vector(2)),
-gravity_vector(-Point<3>::unit_vector(2)),
-background_velocity_value(Point<3>::unit_vector(0)),
-background_field_value(Point<3>::unit_vector(2)),
-background_density_gradient(-Point<3>::unit_vector(2)),
+gravity_vector(-Point<dim>::unit_vector(dim-1)),
+background_velocity_value(Point<dim>::unit_vector(0)),
+background_density_gradient(-Point<dim>::unit_vector(dim-1)),
 background_velocity_gradient(),
-background_field_gradient(),
 // coefficients
-equation_coefficients{parameters.stratificationNumber,
-                      1./parameters.Rossby,
-                      1. / parameters.Froude / parameters.Froude,
-                      parameters.Alfven * parameters.Alfven,
-                      parameters.magReynolds},
+equation_coefficients{parameters.S,
+                      1. / (parameters.Froude * parameters.Froude)},
 // triangulation
 triangulation(),
 // finite element part
-fe_system(FE_Q<3>(parameters.density_degree), 1,
-          FESystem<3>(FE_Q<3>(parameters.velocity_degree), 3), 1,
-          FE_Q<3>(parameters.velocity_degree - 1), 1,
-          FESystem<3>(FE_Q<3>(parameters.magnetic_degree), 3), 1,
-          FE_Q<3>(parameters.magnetic_degree), 1),
+fe_system(FE_Q<dim>(parameters.density_degree), 1,
+          FESystem<dim>(FE_Q<dim>(parameters.velocity_degree), dim), 1,
+          FE_Q<dim>(parameters.velocity_degree - 1), 1),
 dof_handler(triangulation),
 // monitor
 computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
@@ -71,7 +63,7 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     // prepare data out object
     DataOut<dim, DoFHandler<dim>>    data_out;
     data_out.attach_dof_handler(dof_handler);
-    data_out.add_data_vector(present_solution, postprocessor);
+    data_out.add_data_vector(solution, postprocessor);
 
     data_out.build_patches();
 
@@ -97,7 +89,7 @@ void TopographySolver<dim>::refine_mesh()
     KellyErrorEstimator<dim>::estimate(dof_handler,
                                        QGauss<dim-1>(parameters.velocity_degree + 1),
                                        typename FunctionMap<dim>::type(),
-                                       present_solution,
+                                       solution,
                                        estimated_error_per_cell,
                                        fe_system.component_mask(velocity));
     // set refinement flags
@@ -106,9 +98,8 @@ void TopographySolver<dim>::refine_mesh()
                                                       0.7, 0.3);
 
     // preparing temperature solution transfer
-    std::vector<BlockVector<double>> x_solution(2);
-    x_solution[0] = present_solution;
-    x_solution[1] = evaluation_point;
+    std::vector<BlockVector<double>> x_solution(1);
+    x_solution[0] = solution;
     SolutionTransfer<dim,BlockVector<double>> solution_transfer(dof_handler);
 
     // preparing triangulation refinement
@@ -123,16 +114,13 @@ void TopographySolver<dim>::refine_mesh()
 
     // transfer of solution
     {
-        std::vector<BlockVector<double>> tmp_solution(2);
-        tmp_solution[0].reinit(present_solution);
-        tmp_solution[1].reinit(present_solution);
+        std::vector<BlockVector<double>> tmp_solution(1);
+        tmp_solution[0].reinit(solution);
         solution_transfer.interpolate(x_solution, tmp_solution);
 
-        present_solution = tmp_solution[0];
-        evaluation_point = tmp_solution[1];
+        solution = tmp_solution[0];
 
-        nonzero_constraints.distribute(present_solution);
-        nonzero_constraints.distribute(evaluation_point);
+        constraints.distribute(solution);
     }
 }
 
@@ -142,7 +130,11 @@ void TopographySolver<dim>::run()
 {
     make_grid();
 
-    newton_iteration(1e-1, 1, true);
+    setup_dofs();
+
+    assemble_system();
+
+    solve();
 
     output_results();
 
@@ -151,4 +143,5 @@ void TopographySolver<dim>::run()
 }  // namespace TopographyProblem
 
 // explicit instantiation
+template class TopographyProblem::TopographySolver<2>;
 template class TopographyProblem::TopographySolver<3>;

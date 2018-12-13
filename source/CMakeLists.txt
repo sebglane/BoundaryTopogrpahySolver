@@ -8,7 +8,6 @@ SET(TARGET_SRC
   grid_factory.cc
   linear_solver.cc
   make_grid.cc
-  newton_iteration.cc
   parameters.cc
   postprocessor.cc
   setup.cc
