@@ -12,12 +12,11 @@ namespace TopographyProblem {
 Parameters::Parameters(const std::string &parameter_filename)
 :
 read_dimensional_input(false),
-homogeneous_bc_at_bottom(true),
 // geometry parameters
 wave_length(1e5),
 amplitude(50),
 // physics parameters
-Froude(1.0),
+Froude(1.0  ),
 S(1.0),
 // linear solver parameters
 rel_tol(1e-6),
@@ -85,12 +84,6 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                           Patterns::Bool(),
                           "program reads dimensional parameter and computes"
                           "dimensionless numbers");
-
-        prm.declare_entry("homogeneous_bc_at_bottom",
-                          "true",
-                          Patterns::Bool(),
-                          "applies a homogeneous Dirichlet boundary condition"
-                          "at the bottom boundary");
     }
     prm.leave_subsection();
 
@@ -102,7 +95,7 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 "buoyancy frequency in 1 / s");
 
         prm.declare_entry("reference_velocity",
-                "5.0e4",
+                "5.0e-4",
                 Patterns::Double(0.),
                 "fluid velocity in m / s");
 
@@ -194,7 +187,6 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     prm.enter_subsection("runtime parameters");
     {
         read_dimensional_input = prm.get_bool("read_dimensional_input");
-        homogeneous_bc_at_bottom = prm.get_bool("homogeneous_bc_at_bottom");
     }
     prm.leave_subsection();
 
@@ -251,12 +243,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 void Parameters::compute_dimensionless_numbers()
 {
     Froude = reference_velocity / std::sqrt(wave_length * reference_gravity);
-    S = buoyancy_frequency * buoyancy_frequency
-                            * wave_length / reference_gravity;
-
-    std::cout << "Fr = " << std::setw(6) << Froude << ", "
-              << "Stratification Parameter = " << std::setw(6) << S
-              << std::endl;
+    S = buoyancy_frequency * buoyancy_frequency * wave_length / reference_gravity;
 }
 
 

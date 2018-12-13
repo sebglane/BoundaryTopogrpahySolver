@@ -110,29 +110,26 @@ void TopographySolver<dim>::setup_dofs()
          function_map,
          constraints);
 
-        if (parameters.homogeneous_bc_at_bottom)
-        {
-            // zero function
-            const Functions::ZeroFunction<dim>  zero_function(dim+2);
+        // zero function
+        const Functions::ZeroFunction<dim>  zero_function(dim+2);
 
-            // constrain density at bottom
-            const FEValuesExtractors::Scalar    density(0);
-            VectorTools::interpolate_boundary_values
-            (dof_handler,
-             DomainIdentifiers::Bottom,
-             zero_function,
-             constraints,
-             fe_system.component_mask(density));
+        // constrain density at bottom
+        const FEValuesExtractors::Scalar    density(0);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         constraints,
+         fe_system.component_mask(density));
 
-            // constrain velocity at bottom
-            const FEValuesExtractors::Vector    velocity(1);
-            VectorTools::interpolate_boundary_values
-            (dof_handler,
-             DomainIdentifiers::Bottom,
-             zero_function,
-             constraints,
-             fe_system.component_mask(velocity));
-        }
+        // constrain velocity at bottom
+        const FEValuesExtractors::Vector    velocity(1);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         constraints,
+         fe_system.component_mask(velocity));
 
         constraints.close();
     }

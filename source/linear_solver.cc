@@ -7,6 +7,8 @@
 
 #include <deal.II/lac/sparse_direct.h>
 
+#include <deal.II/numerics/vector_tools.h>
+
 #include "solver.h"
 
 namespace TopographyProblem {
@@ -23,6 +25,12 @@ void TopographySolver<dim>::solve()
 
     solution = system_rhs;
     constraints.distribute(solution);
+
+    const double mean_pressure = VectorTools::compute_mean_value(dof_handler,
+                                                                 QGauss<dim>(parameters.velocity_degree + 1),
+                                                                 solution,
+                                                                 dim+1);
+    solution.block(2).add(-mean_pressure);
 }
 
 }  // namespace TopographyProblem

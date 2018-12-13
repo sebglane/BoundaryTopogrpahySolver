@@ -132,35 +132,6 @@ void TopographySolver<dim>::assemble_system()
                                         * fe_face_values.JxW(q);
                     }
                 }
-                else if (cell->face(face_number)->at_boundary() &&
-                         !parameters.homogeneous_bc_at_bottom &&
-                         cell->face(face_number)->boundary_id() == DomainIdentifiers::Bottom)
-                {
-                    fe_face_values.reinit(cell, face_number);
-
-                    const std::vector<Tensor<1,dim>> normal_vectors = fe_face_values.get_normal_vectors();
-
-                    for (unsigned int q=0; q<n_face_q_points; ++q)
-                    {
-                        for (unsigned int k=0; k<dofs_per_cell; ++k)
-                        {
-                            // density part
-                            phi_density[k]  =   fe_face_values[density].value(k, q);
-                            // momentum part
-                            phi_pressure[k] =   fe_face_values[pressure].value(k, q);
-                            phi_velocity[k] =   fe_face_values[velocity].value(k, q);
-                        }
-
-                        for (unsigned int i=0; i<dofs_per_cell; ++i)
-                            for (unsigned int j=0; j<dofs_per_cell; ++j)
-                                local_matrix(i, j) += (
-                                        // continuity equation
-                                          phi_density[j] * normal_vectors[q] * background_velocity_value * phi_density[i]
-                                        // momentum equation
-                                        + phi_pressure[j] * normal_vectors[q] * phi_velocity[i]
-                                        ) * fe_face_values.JxW(q);
-                    }
-                }
 
         cell->get_dof_indices(local_dof_indices);
 

@@ -43,7 +43,43 @@ fe_system(FE_Q<dim>(parameters.density_degree), 1,
 dof_handler(triangulation),
 // monitor
 computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
-{}
+{
+    std::cout << "Topography solver by S. Glane\n"
+              << "This program solves inviscid flow over topography in a stratified layer.\n"
+              << "The governing equations are\n\n"
+              << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
+              << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
+              << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V)\n"
+              << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
+              << "The stratification parameter S and the Froude, Fr, are given by:\n\n";
+
+    // generate a nice table of the equation coefficients
+    std::cout << "+-----------+---------------+\n"
+              << "|    S      |      Fr       |\n"
+              << "+-------------------+-------+\n"
+              << "| N^2 l / g | V / sqrt(g l) |\n"
+              << "+-------------------+-------+\n";
+
+   std::cout << std::endl << "You have chosen the following parameter set:";
+
+   std::stringstream ss;
+   ss << "+----------+----------+----------+----------+\n"
+      << "|    k     |    h     |    S     |    Fr    |\n"
+      << "+----------+----------+----------+----------+\n"
+      << "| "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wave_length
+      << " | "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
+      << " | "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S
+      << " | "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
+      << " |\n"
+      << "+----------+----------+----------+----------+\n";
+
+   std::cout << std::endl << ss.str() << std::endl;
+   std::cout << std::endl << std::fixed << std::flush;
+}
 
 template<int dim>
 void TopographySolver<dim>::output_results(const unsigned int level) const
