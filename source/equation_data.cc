@@ -17,7 +17,7 @@ BackgroundVelocityField<dim>::BackgroundVelocityField()
 :
 Function<dim>(dim)
 {
-    direction_vector[dim-1] = 1.0;
+    direction_vector[0] = 1.0;
 }
 
 template<int dim>
@@ -27,7 +27,7 @@ void BackgroundVelocityField<dim>::vector_value(const Point<dim>    &/* point */
     Assert(value.size() == this->n_components,
            ExcDimensionMismatch(this->n_components, value.size()));
     for (unsigned int d=0; d<this->n_components; ++d)
-        value[d] = direction_vector[d];
+        value[d] = -direction_vector[d];
 }
 
 
