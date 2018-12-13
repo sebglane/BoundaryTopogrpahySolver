@@ -97,7 +97,7 @@ void TopographySolver<dim>::assemble_system()
                             // continuity equation
                               nu_density * grad_phi_density[j] * grad_phi_density[i]
                             - phi_density[j] * background_velocity_value * grad_phi_density[i]
-                            - equation_coefficients[0] * phi_velocity[j] * background_density_gradient * phi_density[i]
+                            + equation_coefficients[0] * phi_velocity[j] * background_density_gradient * phi_density[i]
                             // incompressibility equation
                             - div_phi_velocity[j] * phi_pressure[i]
                             // momentum equation
@@ -108,7 +108,6 @@ void TopographySolver<dim>::assemble_system()
                             - equation_coefficients[1] * phi_density[j] * gravity_vector * phi_velocity[i]
                            ) * fe_values.JxW(q);
         }
-
         if (cell->at_boundary())
             for (unsigned int face_number=0; face_number<GeometryInfo<dim>::faces_per_cell; ++face_number)
                 if (cell->face(face_number)->at_boundary() &&
