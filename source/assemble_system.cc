@@ -1,11 +1,11 @@
 /*
- * assembly.cc
+ * assemble_system.cc
  *
  *  Created on: Nov 23, 2018
  *      Author: sg
  */
 
-#include <deal.II/base/quadrature.h>
+#include <deal.II/base/quadrature_lib.h>
 
 #include <deal.II/fe/fe_values.h>
 
@@ -107,7 +107,6 @@ void TopographySolver<dim>::assemble_system()
                             - phi_pressure[j] * div_phi_velocity[i]
                             - equation_coefficients[1] * phi_density[j] * gravity_vector * phi_velocity[i]
                            ) * fe_values.JxW(q);
-
         }
 
         if (cell->at_boundary())

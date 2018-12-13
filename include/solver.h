@@ -1,5 +1,5 @@
 /*
- * buoyant_fluid_solver.h
+ * solver.h
  *
  *  Created on: Nov 7, 2018
  *      Author: sg
@@ -14,14 +14,11 @@
 
 #include <deal.II/fe/fe_system.h>
 
-#include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria.h>
 
 #include <deal.II/lac/block_vector.h>
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/constraint_matrix.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/sparse_ilu.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 

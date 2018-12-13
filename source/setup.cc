@@ -6,7 +6,6 @@
  */
 
 #include <deal.II/base/function.h>
-#include <deal.II/base/tensor_function.h>
 
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/dofs/dof_renumbering.h>

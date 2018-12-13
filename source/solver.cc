@@ -1,5 +1,5 @@
 /*
- * buoyant_fluid_solver.cc
+ * solver.cc
  *
  *  Created on: Nov 8, 2018
  *      Author: sg
@@ -7,19 +7,11 @@
 
 #include <deal.II/base/parameter_handler.h>
 
-#include <deal.II/dofs/dof_tools.h>
 #include <deal.II/dofs/dof_renumbering.h>
 
-#include <deal.II/fe/fe_nedelec.h>
-#include <deal.II/fe/fe_nothing.h>
 #include <deal.II/fe/fe_q.h>
 
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
 #include <deal.II/grid/grid_refinement.h>
-
-#include <deal.II/lac/solver_gmres.h>
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
