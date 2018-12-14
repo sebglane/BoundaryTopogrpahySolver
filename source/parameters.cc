@@ -30,8 +30,10 @@ n_refinements(1),
 n_initial_refinements(4),
 n_boundary_refinements(1),
 // entropy viscosity parameters
+apply_entropy_viscosity(true),
 c_max(0.5),
 c_entropy(10.0),
+c_velocity(0.5),
 default_viscosity(0.1)
 {
     ParameterHandler prm;
@@ -134,6 +136,16 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                     Patterns::Double(0.),
                     "entropy viscosity control parameter");
 
+            prm.declare_entry("c_velocity",
+                    "0.5",
+                    Patterns::Double(0.),
+                    "viscosity control parameter for velocitys");
+
+            prm.declare_entry("apply_entropy_viscosity",
+                    "false",
+                    Patterns::Bool(),
+                    "default viscosity applied in initial step");
+
             prm.declare_entry("default_viscosity",
                     "0.1",
                     Patterns::Double(0.),
@@ -227,8 +239,10 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
         prm.enter_subsection("entropy viscosity parameters");
         {
+            apply_entropy_viscosity = prm.get_bool("apply_entropy_viscosity");
             c_max = prm.get_double("c_max");
             c_entropy = prm.get_double("c_entropy");
+            c_velocity = prm.get_double("c_velocity");
             default_viscosity =  prm.get_double("default_viscosity");
         }
         prm.leave_subsection();

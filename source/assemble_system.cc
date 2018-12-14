@@ -25,8 +25,7 @@ void TopographySolver<dim>::assemble_system()
     // preparations for entropy viscosity
     const std::pair<double,double> density_range = get_density_range();
     const double average_density = 0.5 * (density_range.first + density_range.second);
-    const double global_entropy_variation =
-            get_entropy_variation(average_density);
+    const double global_entropy_variation = get_entropy_variation(average_density);
 
     // maximum viscosities
     double max_nu_density = -std::numeric_limits<double>::max();
@@ -77,7 +76,7 @@ void TopographySolver<dim>::assemble_system()
     std::vector<double>         phi_pressure(dofs_per_cell);
 
     std::vector<Tensor<1,dim>>  present_velocity_values(n_q_points);
-    std::vector<double>  present_velocity_divergences(n_q_points);
+    std::vector<double>         present_velocity_divergences(n_q_points);
 
     // start assembly
     for (auto cell: dof_handler.active_cell_iterators())

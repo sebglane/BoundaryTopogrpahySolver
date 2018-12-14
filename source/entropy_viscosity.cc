@@ -64,7 +64,7 @@ double TopographySolver<dim>::get_entropy_variation(const double average_density
 
     const FEValuesExtractors::Scalar    density(0);
 
-    std::vector<double> density_values(n_q_points);
+    std::vector<double>     density_values(n_q_points);
 
     double min_entropy_density = std::numeric_limits<double>::max(),
            max_entropy_density = -std::numeric_limits<double>::max(),
@@ -119,16 +119,17 @@ double TopographySolver<dim>::compute_density_viscosity(
 
         double residual = std::abs(v_grad_rho) * std::abs(density - average_density)
                         + 0.5  * std::pow((density - average_density), 2) * std::abs(div_velocity);
-        max_residual = std::max (residual, max_residual);
-        max_velocity = std::max (std::sqrt(velocity*velocity), max_velocity);
+        max_residual = std::max(residual, max_residual);
+        max_velocity = std::max(std::sqrt(velocity*velocity), max_velocity);
     }
+
     const double max_viscosity = parameters.c_max * cell_diameter * max_velocity;
 
-    const double entropy_viscosity =
+    const double entropy_viscosity = (global_entropy_variation > 0 ?
             parameters.c_entropy * cell_diameter * cell_diameter *
-            max_residual / global_entropy_variation;
+            max_residual / global_entropy_variation : 0.0);
 
-    if (entropy_viscosity > 0.0)
+    if (entropy_viscosity > 0.0 && parameters.apply_entropy_viscosity)
         return std::min(max_viscosity, entropy_viscosity);
     else if (max_viscosity > 0.0)
         return max_viscosity;
@@ -151,7 +152,7 @@ double TopographySolver<dim>::compute_velocity_viscosity(
         max_velocity= std::max(std::sqrt(velocity*velocity), max_velocity);
     }
 
-    const double max_viscosity = parameters.c_max * cell_diameter * max_velocity;
+    const double max_viscosity = parameters.c_velocity * cell_diameter * max_velocity;
 
     if (max_viscosity > 0.0)
         return max_viscosity;

@@ -51,8 +51,10 @@ struct Parameters
     unsigned int velocity_degree;
 
     // entropy viscosity parameters
+    bool    apply_entropy_viscosity;
     double  c_max;
     double  c_entropy;
+    double  c_velocity;
     double  default_viscosity;
 
     // refinement parameters
