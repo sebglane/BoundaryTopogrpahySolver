@@ -99,19 +99,19 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
 
         // compute present values for nonlinearity
         // density equation
-        fe_values[density].get_function_values(present_solution,
+        fe_values[density].get_function_values(evaluation_point,
                                                present_density_values);
-        fe_values[density].get_function_gradients(present_solution,
+        fe_values[density].get_function_gradients(evaluation_point,
                                                   present_density_gradients);
         // momentum equation
-        fe_values[velocity].get_function_divergences(present_solution,
+        fe_values[velocity].get_function_divergences(evaluation_point,
                                                      present_velocity_divergences);
-        fe_values[pressure].get_function_values(present_solution,
+        fe_values[pressure].get_function_values(evaluation_point,
                                                 present_pressure_values);
 
-        fe_values[velocity].get_function_gradients(present_solution,
+        fe_values[velocity].get_function_gradients(evaluation_point,
                                                    present_velocity_gradients);
-        fe_values[velocity].get_function_values(present_solution,
+        fe_values[velocity].get_function_values(evaluation_point,
                                                 present_velocity_values);
 
         // entropy viscosity density equation
@@ -193,9 +193,9 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
 
                     const std::vector<Tensor<1,dim>> normal_vectors = fe_face_values.get_normal_vectors();
 
-                    fe_face_values[density].get_function_values(present_solution,
+                    fe_face_values[density].get_function_values(evaluation_point,
                                                                 present_face_density_values);
-                    fe_face_values[velocity].get_function_values(present_solution,
+                    fe_face_values[velocity].get_function_values(evaluation_point,
                                                                  present_face_velocity_values);
 
                     for (unsigned int q=0; q<n_face_q_points; ++q)

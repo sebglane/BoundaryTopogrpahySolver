@@ -14,7 +14,7 @@
 namespace TopographyProblem {
 
 template<int dim>
-void TopographySolver<dim>::solve()
+void TopographySolver<dim>::solve(const bool initial_step)
 {
     std::cout << "   Solving linear system..." << std::endl;
 
@@ -23,14 +23,17 @@ void TopographySolver<dim>::solve()
     SparseDirectUMFPACK     direct_solver;
     direct_solver.solve(system_matrix, system_rhs);
 
-    solution = system_rhs;
-    constraints.distribute(solution);
+    present_solution = system_rhs;
+    const ConstraintMatrix &constraints_used = (initial_step ? nonzero_constraints
+                                                    : zero_constraints);
+
+    constraints_used.distribute(present_solution);
 
     const double mean_pressure = VectorTools::compute_mean_value(dof_handler,
                                                                  QGauss<dim>(parameters.velocity_degree + 1),
-                                                                 solution,
+                                                                 present_solution,
                                                                  dim+1);
-    solution.block(2).add(-mean_pressure);
+    present_solution.block(2).add(-mean_pressure);
 }
 
 }  // namespace TopographyProblem

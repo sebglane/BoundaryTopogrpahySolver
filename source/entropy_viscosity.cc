@@ -36,7 +36,7 @@ std::pair<double,double> TopographySolver<dim>::get_density_range() const
   {
       fe_values.reinit (cell);
 
-      fe_values[density].get_function_values(solution,
+      fe_values[density].get_function_values(present_solution,
                                              density_values);
 
       for (unsigned int q=0; q<n_q_points; ++q)
@@ -74,7 +74,7 @@ double TopographySolver<dim>::get_entropy_variation(const double average_density
     for (auto cell: dof_handler.active_cell_iterators())
     {
         fe_values.reinit (cell);
-        fe_values[density].get_function_values(solution,
+        fe_values[density].get_function_values(present_solution,
                                                density_values);
 
         for (unsigned int q=0; q<n_q_points; ++q)
