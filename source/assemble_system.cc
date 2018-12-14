@@ -23,11 +23,10 @@ void TopographySolver<dim>::assemble_system()
     std::cout << "   Assembling system..." << std::endl;
 
     // preparations for entropy viscosity
-    const std::vector<std::pair<double,double>> global_range = get_range();
-    const double average_density = 0.5 * (global_range[0].first + global_range[0].second);
-    const double average_velocity = 0.5 * (global_range[1].first + global_range[1].second);
-    const std::pair<double,double> global_entropy_variation =
-            get_entropy_variation(average_density, average_velocity);
+    const std::pair<double,double> density_range = get_density_range();
+    const double average_density = 0.5 * (density_range.first + density_range.second);
+    const double global_entropy_variation =
+            get_entropy_variation(average_density);
 
     // maximum viscosities
     double max_nu_density = -std::numeric_limits<double>::max();
@@ -78,7 +77,7 @@ void TopographySolver<dim>::assemble_system()
     std::vector<double>         phi_pressure(dofs_per_cell);
 
     std::vector<Tensor<1,dim>>  present_velocity_values(n_q_points);
-    std::vector<Tensor<2,dim>>  present_velocity_gradients(n_q_points);
+    std::vector<double>  present_velocity_divergences(n_q_points);
 
     // start assembly
     for (auto cell: dof_handler.active_cell_iterators())
@@ -96,26 +95,21 @@ void TopographySolver<dim>::assemble_system()
                                                   present_density_gradients);
         fe_values[velocity].get_function_values(solution,
                                                 present_velocity_values);
-        fe_values[velocity].get_function_gradients(solution,
-                                                   present_velocity_gradients);
+        fe_values[velocity].get_function_divergences(solution,
+                                                     present_velocity_divergences);
 
         // entropy viscosity density equation
         const double nu_density = compute_density_viscosity(present_density_values,
                                                             present_density_gradients,
                                                             present_velocity_values,
-                                                            present_velocity_gradients,
+                                                            present_velocity_divergences,
                                                             average_density,
-                                                            global_entropy_variation.first,
+                                                            global_entropy_variation,
                                                             cell->diameter());
         max_nu_density = std::max(nu_density, max_nu_density);
 
         // entropy velocity equation
-        const double nu_velocity = compute_velocity_viscosity(present_density_values,
-                                                              present_density_gradients,
-                                                              present_velocity_values,
-                                                              present_velocity_gradients,
-                                                              average_density,
-                                                              global_entropy_variation.second,
+        const double nu_velocity = compute_velocity_viscosity(present_velocity_values,
                                                               cell->diameter());
         max_nu_velocity = std::max(nu_velocity, max_nu_velocity);
 

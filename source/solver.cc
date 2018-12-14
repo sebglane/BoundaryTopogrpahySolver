@@ -105,12 +105,10 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     Vector<double>  cell_viscosity_density(triangulation.n_active_cells());
     Vector<double>  cell_viscosity_velocity(triangulation.n_active_cells());
     {
-        const std::vector<std::pair<double,double>> global_range = get_range();
-        const double average_density = 0.5 * (global_range[0].first + global_range[0].second);
-        const double average_velocity = 0.5 * (global_range[1].first + global_range[1].second);
-        const std::pair<double,double> global_entropy_variation =
-                get_entropy_variation(average_density, average_velocity);
-
+        const std::pair<double,double> density_range = get_density_range();
+        const double average_density = 0.5 * (density_range.first + density_range.second);
+        const double global_entropy_variation =
+                get_entropy_variation(average_density);
         QMidpoint<dim>      quadrature;
 
         FEValues<dim>       fe_values(fe_system,
@@ -126,7 +124,7 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
 
         // momentum part
         std::vector<Tensor<1,dim>>  present_velocity_values(n_q_points);
-        std::vector<Tensor<2,dim>>  present_velocity_gradients(n_q_points);
+        std::vector<double>         present_velocity_divergences(n_q_points);
 
         const FEValuesExtractors::Scalar    density(0);
         const FEValuesExtractors::Vector    velocity(1);
@@ -142,24 +140,19 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
                                                       present_density_gradients);
             fe_values[velocity].get_function_values(solution,
                                                     present_velocity_values);
-            fe_values[velocity].get_function_gradients(solution,
-                                                       present_velocity_gradients);
+            fe_values[velocity].get_function_divergences(solution,
+                                                       present_velocity_divergences);
             // entropy viscosity density equation
             const double nu_density = compute_density_viscosity(present_density_values,
                                                                 present_density_gradients,
                                                                 present_velocity_values,
-                                                                present_velocity_gradients,
+                                                                present_velocity_divergences,
                                                                 average_density,
-                                                                global_entropy_variation.first,
+                                                                global_entropy_variation,
                                                                 cell->diameter());
             cell_viscosity_density(cell->index()) = nu_density;
             // entropy viscosity momentum equation
-            const double nu_velocity = compute_velocity_viscosity(present_density_values,
-                                                                  present_density_gradients,
-                                                                  present_velocity_values,
-                                                                  present_velocity_gradients,
-                                                                  average_density,
-                                                                  global_entropy_variation.second,
+            const double nu_velocity = compute_velocity_viscosity(present_velocity_values,
                                                                   cell->diameter());
             cell_viscosity_velocity(cell->index()) = nu_velocity;
         }
