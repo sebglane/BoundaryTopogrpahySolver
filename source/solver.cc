@@ -99,7 +99,7 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     // prepare data out object
     DataOut<dim, DoFHandler<dim>>    data_out;
     data_out.attach_dof_handler(dof_handler);
-    data_out.add_data_vector(solution, postprocessor);
+    data_out.add_data_vector(present_solution, postprocessor);
 
     // compute cell viscosity
     Vector<double>  cell_viscosity_density(triangulation.n_active_cells());
@@ -134,13 +134,13 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
             fe_values.reinit(cell);
 
             // compute present values for entropy viscosity
-            fe_values[density].get_function_values(solution,
+            fe_values[density].get_function_values(present_solution,
                                                    present_density_values);
-            fe_values[density].get_function_gradients(solution,
+            fe_values[density].get_function_gradients(present_solution,
                                                       present_density_gradients);
-            fe_values[velocity].get_function_values(solution,
+            fe_values[velocity].get_function_values(present_solution,
                                                     present_velocity_values);
-            fe_values[velocity].get_function_divergences(solution,
+            fe_values[velocity].get_function_divergences(present_solution,
                                                        present_velocity_divergences);
             // entropy viscosity density equation
             const double nu_density = compute_density_viscosity(present_density_values,
@@ -186,7 +186,7 @@ void TopographySolver<dim>::refine_mesh()
     KellyErrorEstimator<dim>::estimate(dof_handler,
                                        QGauss<dim-1>(parameters.velocity_degree + 1),
                                        typename FunctionMap<dim>::type(),
-                                       solution,
+                                       present_solution,
                                        estimated_error_per_cell,
                                        fe_system.component_mask(velocity));
     // set refinement flags
@@ -196,7 +196,7 @@ void TopographySolver<dim>::refine_mesh()
 
     // preparing temperature solution transfer
     std::vector<BlockVector<double>> x_solution(1);
-    x_solution[0] = solution;
+    x_solution[0] = present_solution;
     SolutionTransfer<dim,BlockVector<double>> solution_transfer(dof_handler);
 
     // preparing triangulation refinement
@@ -212,18 +212,20 @@ void TopographySolver<dim>::refine_mesh()
     // transfer of solution
     {
         std::vector<BlockVector<double>> tmp_solution(1);
-        tmp_solution[0].reinit(solution);
+        tmp_solution[0].reinit(present_solution);
         solution_transfer.interpolate(x_solution, tmp_solution);
 
-        solution = tmp_solution[0];
+        present_solution = tmp_solution[0];
 
-        constraints.distribute(solution);
+        nonzero_constraints.distribute(present_solution);
     }
 }
 
 template<int dim>
 void TopographySolver<dim>::run()
 {
+    bool initial_step = 0;
+
     for (unsigned int cycle = 0; cycle < parameters.n_refinements; ++cycle)
     {
         std::cout << "Cycle " << cycle << ':' << std::endl;
@@ -236,8 +238,10 @@ void TopographySolver<dim>::run()
         else
             refine_mesh();
 
-        assemble_system();
-        solve();
+        newton_iteration(parameters.tol,
+                         parameters.max_iter,
+                         initial_step);
+
 
         const Tensor<1,dim> average_boundary_traction
         = compute_boundary_traction();
@@ -245,6 +249,10 @@ void TopographySolver<dim>::run()
         std::cout << "   Average traction: " << average_boundary_traction << std::endl;
 
         output_results(cycle);
+
+        if (cycle == 0)
+            initial_step = true;
+
     }
 }
 }  // namespace TopographyProblem

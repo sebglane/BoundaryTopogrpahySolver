@@ -41,7 +41,7 @@ Tensor<1,dim> TopographySolver<dim>::compute_boundary_traction() const
                 {
                     fe_face_values.reinit(cell, face_number);
 
-                    fe_face_values[pressure].get_function_values(solution,
+                    fe_face_values[pressure].get_function_values(present_solution,
                                                                  present_pressure_values);
 
                     const std::vector<Tensor<1,dim>> normal_vectors = fe_face_values.get_normal_vectors();

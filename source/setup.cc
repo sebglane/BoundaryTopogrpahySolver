@@ -84,15 +84,15 @@ void TopographySolver<dim>::setup_dofs()
 
     // nonzero constraints
     {
-        constraints.clear();
+        nonzero_constraints.clear();
 
         DoFTools::make_hanging_node_constraints(dof_handler,
-                constraints);
+                nonzero_constraints);
 
         // periodic boundary conditions for density
         DoFTools::make_periodicity_constraints<DoFHandler<dim>>
         (periodicity_vector,
-         constraints);
+         nonzero_constraints);
 
         // constrain normal components of velocity
         std::set<types::boundary_id> no_normal_flux_boundaries;
@@ -108,7 +108,7 @@ void TopographySolver<dim>::setup_dofs()
          1,
          no_normal_flux_boundaries,
          function_map,
-         constraints);
+         nonzero_constraints);
 
         // zero function
         const Functions::ZeroFunction<dim>  zero_function(dim+2);
@@ -119,7 +119,7 @@ void TopographySolver<dim>::setup_dofs()
         (dof_handler,
          DomainIdentifiers::Bottom,
          zero_function,
-         constraints,
+         nonzero_constraints,
          fe_system.component_mask(density));
 
         // constrain velocity at bottom
@@ -128,7 +128,7 @@ void TopographySolver<dim>::setup_dofs()
         (dof_handler,
          DomainIdentifiers::Bottom,
          zero_function,
-         constraints,
+         nonzero_constraints,
          fe_system.component_mask(velocity));
 
         // constrain velocity at bottom
@@ -137,14 +137,77 @@ void TopographySolver<dim>::setup_dofs()
         (dof_handler,
          DomainIdentifiers::Bottom,
          zero_function,
-         constraints,
+         nonzero_constraints,
          fe_system.component_mask(pressure));
 
-        constraints.close();
+        nonzero_constraints.close();
     }
+    // zero constraints
+    {
+        zero_constraints.clear();
+
+        DoFTools::make_hanging_node_constraints(dof_handler,
+                zero_constraints);
+
+        // periodic boundary conditions for density
+        DoFTools::make_periodicity_constraints<DoFHandler<dim>>
+        (periodicity_vector,
+         zero_constraints);
+
+        // constrain normal components of velocity
+        std::set<types::boundary_id> no_normal_flux_boundaries;
+        no_normal_flux_boundaries.insert(DomainIdentifiers::BoundaryIds::TopoBndry);
+
+        const Functions::ZeroFunction<dim>                  velocity_boundary_values(dim);
+        std::map<types::boundary_id, const Function<dim> *> function_map;
+        for (const auto it: no_normal_flux_boundaries)
+          function_map[it] = &velocity_boundary_values;
+
+        VectorTools::compute_nonzero_normal_flux_constraints
+        (dof_handler,
+         1,
+         no_normal_flux_boundaries,
+         function_map,
+         zero_constraints);
+
+        // zero function
+        const Functions::ZeroFunction<dim>  zero_function(dim+2);
+
+        // constrain density at bottom
+        const FEValuesExtractors::Scalar    density(0);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         zero_constraints,
+         fe_system.component_mask(density));
+
+        // constrain velocity at bottom
+        const FEValuesExtractors::Vector    velocity(1);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         zero_constraints,
+         fe_system.component_mask(velocity));
+
+        // constrain velocity at bottom
+        const FEValuesExtractors::Scalar    pressure(dim+1);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         zero_constraints,
+         fe_system.component_mask(pressure));
+
+        zero_constraints.close();
+    }
+
+
     // stokes matrix and vector setup
     setup_system_matrix(dofs_per_block);
-    solution.reinit(dofs_per_block);
+    present_solution.reinit(dofs_per_block);
+    evaluation_point.reinit(dofs_per_block);
     system_rhs.reinit(dofs_per_block);
 }
 
@@ -183,7 +246,7 @@ void TopographySolver<dim>::setup_system_matrix
     DoFTools::make_sparsity_pattern(dof_handler,
                                     coupling,
                                     dsp,
-                                    constraints);
+                                    nonzero_constraints);
 
     sparsity_pattern.copy_from(dsp);
 

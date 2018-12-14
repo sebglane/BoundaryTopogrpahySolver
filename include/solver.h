@@ -48,9 +48,15 @@ private:
 
     void setup_system_matrix(const std::vector<types::global_dof_index> &dofs_per_block);
 
-    void assemble_system();
+    void assemble(const bool initial_step, const bool assemle_matrix);
+    void assemble_system(const bool initial_step);
+    void assemble_rhs(const bool initial_step);
 
-    void solve();
+    void solve(const bool first_step);
+
+    void newton_iteration(const double tolerance,
+                          const unsigned int max_iteration,
+                          const bool is_initial_step);
 
     void output_results(const unsigned int level = 0) const;
 
@@ -90,14 +96,17 @@ private:
     DoFHandler<dim>             dof_handler;
 
     // constraints
-    ConstraintMatrix            constraints;
+    ConstraintMatrix            nonzero_constraints;
+    ConstraintMatrix            zero_constraints;
 
     // system matrix
     BlockSparsityPattern        sparsity_pattern;
     BlockSparseMatrix<double>   system_matrix;
 
     // vectors
-    BlockVector<double>         solution;
+    BlockVector<double>         evaluation_point;
+    BlockVector<double>         present_solution;
+    BlockVector<double>         newton_update;
     BlockVector<double>         system_rhs;
 
     // monitor of computing times
