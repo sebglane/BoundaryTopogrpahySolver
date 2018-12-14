@@ -34,7 +34,10 @@ apply_entropy_viscosity(true),
 c_max(0.5),
 c_entropy(10.0),
 c_velocity(0.5),
-default_viscosity(0.1)
+default_viscosity(0.1),
+// newton iteration control
+tolerance(1e-12),
+max_iter(15)
 {
     ParameterHandler prm;
     declare_parameters(prm);
@@ -189,24 +192,19 @@ void Parameters::declare_parameters(ParameterHandler &prm)
     }
     prm.leave_subsection();
 
-//    prm.enter_subsection("linear solver settings");
-//    {
-//        prm.declare_entry("tol_rel",
-//                "1e-6",
-//                Patterns::Double(),
-//                "relative tolerance for the linear solver.");
-//
-//        prm.declare_entry("tol_abs",
-//                "1e-12",
-//                Patterns::Double(),
-//                "absolute tolerance for the linear solver.");
-//
-//        prm.declare_entry("n_max_iter",
-//                "100",
-//                Patterns::Integer(0),
-//                "maximum number of iterations for the linear solver.");
-//    }
-//    prm.leave_subsection();
+    prm.enter_subsection("Newton iteration control");
+    {
+        prm.declare_entry("tolerance",
+                "1e-6",
+                Patterns::Double(),
+                "tolerance for termination of Newton iteration");
+
+        prm.declare_entry("max_iter",
+                "15",
+                Patterns::Integer(0),
+                "maximum number of iterations for the Newton solver");
+    }
+    prm.leave_subsection();
 }
 
 void Parameters::parse_parameters(ParameterHandler &prm)
@@ -274,14 +272,12 @@ void Parameters::parse_parameters(ParameterHandler &prm)
         prm.leave_subsection();
     }
 
-//    prm.enter_subsection("linear solver settings");
-//    {
-//        rel_tol = prm.get_double("tol_rel");
-//        abs_tol = prm.get_double("tol_abs");
-//
-//        n_max_iter = prm.get_integer("n_max_iter");
-//    }
-//    prm.leave_subsection();
+    prm.enter_subsection("Newton iteration control");
+    {
+        tolerance = prm.get_double("tolerance");
+        max_iter = prm.get_integer("max_iter");
+    }
+    prm.leave_subsection();
 }
 
 void Parameters::compute_dimensionless_numbers()

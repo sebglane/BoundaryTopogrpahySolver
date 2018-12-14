@@ -57,6 +57,10 @@ struct Parameters
     double  c_velocity;
     double  default_viscosity;
 
+    // newton iteration
+    double          tolerance;
+    unsigned int    max_iter;
+
     // refinement parameters
     unsigned int n_refinements;
     unsigned int n_initial_refinements;
