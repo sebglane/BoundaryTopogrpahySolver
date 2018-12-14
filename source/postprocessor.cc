@@ -12,7 +12,8 @@ namespace TopographyProblem {
 template<int dim>
 PostProcessor<dim>::PostProcessor()
 :
-DataPostprocessor<dim>()
+DataPostprocessor<dim>(),
+background_velocity()
 {}
 
 template<int dim>
@@ -26,6 +27,9 @@ std::vector<std::string> PostProcessor<dim>::get_names() const
         solution_names.push_back("velocity");
     // pressure
     solution_names.push_back("pressure");
+    // total velocity
+    for (unsigned int d=0; d<dim; ++d)
+        solution_names.push_back("total_velocity");
 
     return solution_names;
 }
@@ -50,6 +54,9 @@ PostProcessor<dim>::get_data_component_interpretation() const
         component_interpretation.push_back(DataComponentInterpretation::component_is_part_of_vector);
     // pressure
     component_interpretation.push_back(DataComponentInterpretation::component_is_scalar);
+    // total velocity
+    for (unsigned int d=0; d<dim; ++d)
+        component_interpretation.push_back(DataComponentInterpretation::component_is_part_of_vector);
 
     return component_interpretation;
 }
@@ -62,6 +69,8 @@ void PostProcessor<dim>::evaluate_vector_field(
 
     const unsigned int n_quadrature_points = inputs.solution_values.size();
 
+    Vector<double>      background_velocity_values(background_velocity.n_components);
+
     AssertDimension(computed_quantities.size(),
                     n_quadrature_points);
     AssertDimension(inputs.solution_values[0].size(),
@@ -69,7 +78,7 @@ void PostProcessor<dim>::evaluate_vector_field(
 
     for (unsigned int q=0; q<n_quadrature_points; ++q)
     {
-        AssertDimension(computed_quantities[q].size(), dim+2);
+        AssertDimension(computed_quantities[q].size(), 2*dim+2);
         // density
         computed_quantities[q][0] = inputs.solution_values[q][0];
         // velocity
@@ -77,6 +86,12 @@ void PostProcessor<dim>::evaluate_vector_field(
             computed_quantities[q][d+1] = inputs.solution_values[q][d+1];
         // pressure
         computed_quantities[q][dim+1] = inputs.solution_values[q][dim+1];
+        // total velocity
+        background_velocity.vector_value(inputs.evaluation_points[q],
+                                         background_velocity_values);
+        for (unsigned int d=0; d<dim; ++d)
+            computed_quantities[q][d+dim+2] = inputs.solution_values[q][d+1]
+                                            + background_velocity_values[d]  ;
     }
 }
 }  // namespace TopographyProblem

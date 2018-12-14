@@ -10,6 +10,8 @@
 
 #include <deal.II/numerics/data_postprocessor.h>
 
+#include "equation_data.h"
+
 namespace TopographyProblem {
 
 using namespace dealii;
@@ -30,6 +32,9 @@ public:
     get_data_component_interpretation() const;
 
     virtual UpdateFlags get_needed_update_flags() const;
+
+private:
+    const EquationData::BackgroundVelocity<dim>   background_velocity;
 };
 
 }  // namespace TopographyProblem

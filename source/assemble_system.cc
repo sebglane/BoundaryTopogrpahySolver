@@ -74,8 +74,8 @@ void TopographySolver<dim>::assemble_system()
         local_rhs = 0;
 
         // entropy viscosity density equation
-        const double nu_density = 0.1;
-        const double nu_velocity = 0.1;
+        const double nu_density = 0.00001;
+        const double nu_velocity = 0.00001;
 
         for (unsigned int q=0; q<n_q_points; ++q)
         {
@@ -122,12 +122,11 @@ void TopographySolver<dim>::assemble_system()
                         for (unsigned int k=0; k<dofs_per_cell; ++k)
                             // density part
                             phi_density[k]  =   fe_face_values[density].value(k, q);
-
                         for (unsigned int i=0; i<dofs_per_cell; ++i)
                             for (unsigned int j=0; j<dofs_per_cell; ++j)
                                 local_matrix(i, j) +=
                                         // continuity equation
-                                          phi_density[j] * normal_vectors[q] * background_velocity_value * phi_density[i]
+                                        phi_density[j] * normal_vectors[q] * background_velocity_value * phi_density[i]
                                         * fe_face_values.JxW(q);
                     }
                 }

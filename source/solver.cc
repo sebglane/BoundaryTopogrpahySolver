@@ -80,10 +80,13 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;
 
-   std::cout << "background density gradient: " << background_density_gradient << std::endl;
-   std::cout << "background velocity: " << background_velocity_value << std::endl;
-   std::cout << "background velocity gradient: " << background_velocity_gradient << std::endl;
-   std::cout << "gravity vector: " << gravity_vector << std::endl;
+   const double omega = 2. * numbers::PI * parameters.Froude;
+   const double N = std::sqrt(parameters.S);
+
+   if (omega > N)
+       std::cout << "omega^2 > N^2" << std::endl;
+   else if (omega < N)
+       std::cout << "omega^2 < N^2" << std::endl;
 }
 
 template<int dim>
@@ -97,7 +100,6 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     DataOut<dim, DoFHandler<dim>>    data_out;
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, postprocessor);
-
     data_out.build_patches();
 
     // write output to disk
@@ -128,7 +130,7 @@ void TopographySolver<dim>::refine_mesh()
     // set refinement flags
     GridRefinement::refine_and_coarsen_fixed_fraction(triangulation,
                                                       estimated_error_per_cell,
-                                                      0.7, 0.3);
+                                                      0.8, 0.0);
 
     // preparing temperature solution transfer
     std::vector<BlockVector<double>> x_solution(1);
@@ -157,21 +159,31 @@ void TopographySolver<dim>::refine_mesh()
     }
 }
 
-
 template<int dim>
 void TopographySolver<dim>::run()
 {
-    make_grid();
+    for (unsigned int cycle = 0; cycle < parameters.n_refinements; ++cycle)
+    {
+        std::cout << "Cycle " << cycle << ':' << std::endl;
 
-    setup_dofs();
+        if (cycle == 0)
+        {
+            make_grid();
+            setup_dofs();
+        }
+        else
+            refine_mesh();
 
-    assemble_system();
+        assemble_system();
+        solve();
 
-    solve();
+        const Tensor<1,dim> average_boundary_traction
+        = compute_boundary_traction();
 
-    output_results();
+        std::cout << "   Average traction: " << average_boundary_traction << std::endl;
 
-    refine_mesh();
+        output_results(cycle);
+    }
 }
 }  // namespace TopographyProblem
 

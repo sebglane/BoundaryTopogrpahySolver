@@ -52,10 +52,23 @@ namespace EquationData {
 using namespace dealii;
 
 template<int dim>
-class BackgroundVelocityField : public Function<dim>
+class VelocityBoundaryValues : public Function<dim>
 {
 public:
-    BackgroundVelocityField();
+    VelocityBoundaryValues();
+
+    virtual void    vector_value(const Point<dim>   &point,
+                                 Vector<double>     &value) const;
+
+private:
+    Tensor<1,dim>           direction_vector;
+};
+
+template<int dim>
+class BackgroundVelocity : public Function<dim>
+{
+public:
+    BackgroundVelocity();
 
     virtual void    vector_value(const Point<dim>   &point,
                                  Vector<double>     &value) const;

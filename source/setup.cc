@@ -98,10 +98,10 @@ void TopographySolver<dim>::setup_dofs()
         std::set<types::boundary_id> no_normal_flux_boundaries;
         no_normal_flux_boundaries.insert(DomainIdentifiers::BoundaryIds::TopoBndry);
 
-        const EquationData::BackgroundVelocityField<dim>    background_velocity;
+        const EquationData::VelocityBoundaryValues<dim>    velocity_boundary_values;
         std::map<types::boundary_id, const Function<dim> *> function_map;
         for (const auto it: no_normal_flux_boundaries)
-          function_map[it] = &background_velocity;
+          function_map[it] = &velocity_boundary_values;
 
         VectorTools::compute_nonzero_normal_flux_constraints
         (dof_handler,
@@ -130,6 +130,15 @@ void TopographySolver<dim>::setup_dofs()
          zero_function,
          constraints,
          fe_system.component_mask(velocity));
+
+        // constrain velocity at bottom
+        const FEValuesExtractors::Scalar    pressure(dim+1);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         constraints,
+         fe_system.component_mask(pressure));
 
         constraints.close();
     }

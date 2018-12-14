@@ -56,6 +56,8 @@ private:
 
     void refine_mesh();
 
+    Tensor<1,dim>   compute_boundary_traction() const;
+
     Parameters                 &parameters;
 
     std::vector<double>         equation_coefficients;

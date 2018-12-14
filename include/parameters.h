@@ -23,7 +23,6 @@ struct Parameters
     void compute_dimensionless_numbers();
 
     // runtime parameters
-//    bool    workstream_assembly;
     bool    read_dimensional_input;
     bool    homogeneous_bc_at_bottom;
 
