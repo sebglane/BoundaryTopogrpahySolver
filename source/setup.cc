@@ -131,15 +131,6 @@ void TopographySolver<dim>::setup_dofs()
          nonzero_constraints,
          fe_system.component_mask(velocity));
 
-        // constrain velocity at bottom
-        const FEValuesExtractors::Scalar    pressure(dim+1);
-        VectorTools::interpolate_boundary_values
-        (dof_handler,
-         DomainIdentifiers::Bottom,
-         zero_function,
-         nonzero_constraints,
-         fe_system.component_mask(pressure));
-
         nonzero_constraints.close();
     }
     // zero constraints
@@ -191,18 +182,8 @@ void TopographySolver<dim>::setup_dofs()
          zero_constraints,
          fe_system.component_mask(velocity));
 
-        // constrain velocity at bottom
-        const FEValuesExtractors::Scalar    pressure(dim+1);
-        VectorTools::interpolate_boundary_values
-        (dof_handler,
-         DomainIdentifiers::Bottom,
-         zero_function,
-         zero_constraints,
-         fe_system.component_mask(pressure));
-
         zero_constraints.close();
     }
-
 
     // stokes matrix and vector setup
     setup_system_matrix(dofs_per_block);
