@@ -238,7 +238,7 @@ void TopographySolver<dim>::run()
         else
             refine_mesh();
 
-        newton_iteration(parameters.tol,
+        newton_iteration(parameters.tolerance,
                          parameters.max_iter,
                          initial_step);
 

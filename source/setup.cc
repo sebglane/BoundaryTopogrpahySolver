@@ -185,10 +185,12 @@ void TopographySolver<dim>::setup_dofs()
         zero_constraints.close();
     }
 
-    // stokes matrix and vector setup
+    // system matrix and vector setup
     setup_system_matrix(dofs_per_block);
-    present_solution.reinit(dofs_per_block);
+
     evaluation_point.reinit(dofs_per_block);
+    newton_update.reinit(dofs_per_block);
+    present_solution.reinit(dofs_per_block);
     system_rhs.reinit(dofs_per_block);
 }
 

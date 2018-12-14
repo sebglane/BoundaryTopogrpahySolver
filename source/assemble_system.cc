@@ -171,7 +171,7 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
                         -  nu_density * present_density_gradients[q] * grad_phi_density[i]
                         + present_density_values[q] * background_velocity_value * grad_phi_density[i]
                         + present_density_values[q] * present_velocity_values[q] * grad_phi_density[i]
-                        - equation_coefficients[0] * phi_velocity[j] * background_density_gradient * phi_density[i]
+                        - equation_coefficients[0] * present_velocity_values[q] * background_density_gradient * phi_density[i]
                         // incompressibility equation
                         + present_velocity_divergences[q] * phi_pressure[i]
                         // momentum equation
