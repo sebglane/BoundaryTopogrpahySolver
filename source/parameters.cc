@@ -28,8 +28,11 @@ velocity_degree(2),
 // refinement parameters
 n_refinements(1),
 n_initial_refinements(4),
-n_boundary_refinements(1)
-// logging parameters
+n_boundary_refinements(1),
+// entropy viscosity parameters
+c_max(0.5),
+c_entropy(10.0),
+default_viscosity(0.1)
 {
     ParameterHandler prm;
     declare_parameters(prm);
@@ -119,6 +122,25 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Integer(1,2),
                 "Polynomial degree of the density discretization.");
 
+        prm.enter_subsection("entropy viscosity parameters");
+        {
+            prm.declare_entry("c_max",
+                    "0.5",
+                    Patterns::Double(0.),
+                    "entropy viscosity control parameter");
+
+            prm.declare_entry("c_entropy",
+                    "1.0",
+                    Patterns::Double(0.),
+                    "entropy viscosity control parameter");
+
+            prm.declare_entry("default_viscosity",
+                    "0.1",
+                    Patterns::Double(0.),
+                    "default viscosity applied in initial step");
+        }
+        prm.leave_subsection();
+
         prm.enter_subsection("refinement parameters");
         {
             prm.declare_entry("n_refinements",
@@ -200,6 +222,14 @@ void Parameters::parse_parameters(ParameterHandler &prm)
             n_refinements = prm.get_integer("n_refinements");
             n_initial_refinements = prm.get_integer("n_initial_refinements");
             n_boundary_refinements = prm.get_integer("n_boundary_refinements");
+        }
+        prm.leave_subsection();
+
+        prm.enter_subsection("entropy viscosity parameters");
+        {
+            c_max = prm.get_double("c_max");
+            c_entropy = prm.get_double("c_entropy");
+            default_viscosity =  prm.get_double("default_viscosity");
         }
         prm.leave_subsection();
     }

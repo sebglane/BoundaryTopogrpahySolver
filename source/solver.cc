@@ -100,7 +100,76 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     DataOut<dim, DoFHandler<dim>>    data_out;
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, postprocessor);
-    data_out.build_patches();
+
+    // compute cell viscosity
+    Vector<double>  cell_viscosity_density(triangulation.n_active_cells());
+    Vector<double>  cell_viscosity_velocity(triangulation.n_active_cells());
+    {
+        const std::vector<std::pair<double,double>> global_range = get_range();
+        const double average_density = 0.5 * (global_range[0].first + global_range[0].second);
+        const double average_velocity = 0.5 * (global_range[1].first + global_range[1].second);
+        const std::pair<double,double> global_entropy_variation =
+                get_entropy_variation(average_density, average_velocity);
+
+        QMidpoint<dim>      quadrature;
+
+        FEValues<dim>       fe_values(fe_system,
+                                      quadrature,
+                                      update_values|
+                                      update_gradients);
+
+        const unsigned int n_q_points    = quadrature.size();
+
+        // density part
+        std::vector<double>         present_density_values(n_q_points);
+        std::vector<Tensor<1,dim>>  present_density_gradients(n_q_points);
+
+        // momentum part
+        std::vector<Tensor<1,dim>>  present_velocity_values(n_q_points);
+        std::vector<Tensor<2,dim>>  present_velocity_gradients(n_q_points);
+
+        const FEValuesExtractors::Scalar    density(0);
+        const FEValuesExtractors::Vector    velocity(1);
+
+        for (auto cell: dof_handler.active_cell_iterators())
+        {
+            fe_values.reinit(cell);
+
+            // compute present values for entropy viscosity
+            fe_values[density].get_function_values(solution,
+                                                   present_density_values);
+            fe_values[density].get_function_gradients(solution,
+                                                      present_density_gradients);
+            fe_values[velocity].get_function_values(solution,
+                                                    present_velocity_values);
+            fe_values[velocity].get_function_gradients(solution,
+                                                       present_velocity_gradients);
+            // entropy viscosity density equation
+            const double nu_density = compute_density_viscosity(present_density_values,
+                                                                present_density_gradients,
+                                                                present_velocity_values,
+                                                                present_velocity_gradients,
+                                                                average_density,
+                                                                global_entropy_variation.first,
+                                                                cell->diameter());
+            cell_viscosity_density(cell->index()) = nu_density;
+            // entropy viscosity momentum equation
+            const double nu_velocity = compute_velocity_viscosity(present_density_values,
+                                                                  present_density_gradients,
+                                                                  present_velocity_values,
+                                                                  present_velocity_gradients,
+                                                                  average_density,
+                                                                  global_entropy_variation.second,
+                                                                  cell->diameter());
+            cell_viscosity_velocity(cell->index()) = nu_velocity;
+        }
+    }
+    data_out.add_data_vector(cell_viscosity_density,
+                             "cell_viscosity_density");
+    data_out.add_data_vector(cell_viscosity_velocity,
+                             "cell_viscosity_velocity");
+
+    data_out.build_patches(std::min(parameters.density_degree, parameters.velocity_degree));
 
     // write output to disk
     const std::string filename = ("solution-" +

@@ -50,6 +50,11 @@ struct Parameters
     unsigned int density_degree;
     unsigned int velocity_degree;
 
+    // entropy viscosity parameters
+    double  c_max;
+    double  c_entropy;
+    double  default_viscosity;
+
     // refinement parameters
     unsigned int n_refinements;
     unsigned int n_initial_refinements;

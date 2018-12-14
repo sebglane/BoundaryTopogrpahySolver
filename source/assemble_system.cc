@@ -22,6 +22,17 @@ void TopographySolver<dim>::assemble_system()
 
     std::cout << "   Assembling system..." << std::endl;
 
+    // preparations for entropy viscosity
+    const std::vector<std::pair<double,double>> global_range = get_range();
+    const double average_density = 0.5 * (global_range[0].first + global_range[0].second);
+    const double average_velocity = 0.5 * (global_range[1].first + global_range[1].second);
+    const std::pair<double,double> global_entropy_variation =
+            get_entropy_variation(average_density, average_velocity);
+
+    // maximum viscosities
+    double max_nu_density = -std::numeric_limits<double>::max();
+    double max_nu_velocity = -std::numeric_limits<double>::max();
+
     // reset global objects
     system_matrix = 0;
     system_rhs = 0;
@@ -32,7 +43,6 @@ void TopographySolver<dim>::assemble_system()
     FEValues<dim>       fe_values(fe_system,
                                   quadrature,
                                   update_values|
-                                  update_quadrature_points|
                                   update_JxW_values|
                                   update_gradients);
     FEFaceValues<dim>   fe_face_values(fe_system,
@@ -58,11 +68,17 @@ void TopographySolver<dim>::assemble_system()
     std::vector<double>         phi_density(dofs_per_cell);
     std::vector<Tensor<1,dim>>  grad_phi_density(dofs_per_cell);
 
+    std::vector<double>         present_density_values(n_q_points);
+    std::vector<Tensor<1,dim>>  present_density_gradients(n_q_points);
+
     // momentum part
     std::vector<double>         div_phi_velocity(dofs_per_cell);
     std::vector<Tensor<1,dim>>  phi_velocity(dofs_per_cell);
     std::vector<Tensor<2,dim>>  grad_phi_velocity(dofs_per_cell);
     std::vector<double>         phi_pressure(dofs_per_cell);
+
+    std::vector<Tensor<1,dim>>  present_velocity_values(n_q_points);
+    std::vector<Tensor<2,dim>>  present_velocity_gradients(n_q_points);
 
     // start assembly
     for (auto cell: dof_handler.active_cell_iterators())
@@ -73,9 +89,36 @@ void TopographySolver<dim>::assemble_system()
         local_matrix = 0;
         local_rhs = 0;
 
+        // compute present values for entropy viscosity
+        fe_values[density].get_function_values(solution,
+                                               present_density_values);
+        fe_values[density].get_function_gradients(solution,
+                                                  present_density_gradients);
+        fe_values[velocity].get_function_values(solution,
+                                                present_velocity_values);
+        fe_values[velocity].get_function_gradients(solution,
+                                                   present_velocity_gradients);
+
         // entropy viscosity density equation
-        const double nu_density = 0.00001;
-        const double nu_velocity = 0.00001;
+        const double nu_density = compute_density_viscosity(present_density_values,
+                                                            present_density_gradients,
+                                                            present_velocity_values,
+                                                            present_velocity_gradients,
+                                                            average_density,
+                                                            global_entropy_variation.first,
+                                                            cell->diameter());
+        max_nu_density = std::max(nu_density, max_nu_density);
+
+        // entropy velocity equation
+        const double nu_velocity = compute_velocity_viscosity(present_density_values,
+                                                              present_density_gradients,
+                                                              present_velocity_values,
+                                                              present_velocity_gradients,
+                                                              average_density,
+                                                              global_entropy_variation.second,
+                                                              cell->diameter());
+        max_nu_velocity = std::max(nu_velocity, max_nu_velocity);
+
 
         for (unsigned int q=0; q<n_q_points; ++q)
         {
@@ -139,6 +182,12 @@ void TopographySolver<dim>::assemble_system()
                                                system_matrix,
                                                system_rhs);
     }
+    std::cout << "      maximum viscosity (density): "
+              << max_nu_density
+              << std::endl;
+    std::cout << "      maximum viscosity (velocity): "
+              << max_nu_velocity
+              << std::endl;
 }
 }  // namespace TopographyProblem
 
