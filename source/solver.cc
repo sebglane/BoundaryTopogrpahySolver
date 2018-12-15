@@ -224,7 +224,7 @@ void TopographySolver<dim>::refine_mesh()
 template<int dim>
 void TopographySolver<dim>::run()
 {
-    bool initial_step = 0;
+    bool initial_step = true;
 
     for (unsigned int cycle = 0; cycle < parameters.n_refinements; ++cycle)
     {
@@ -251,7 +251,7 @@ void TopographySolver<dim>::run()
         output_results(cycle);
 
         if (cycle == 0)
-            initial_step = true;
+            initial_step = false;
 
     }
 }
