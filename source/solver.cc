@@ -27,9 +27,7 @@ template<int dim>
 TopographySolver<dim>::TopographySolver(Parameters &parameters_)
 :
 parameters(parameters_),
-gravity_vector(-Point<dim>::unit_vector(dim-1)),
 background_velocity_value(Point<dim>::unit_vector(0)),
-background_density_gradient(-Point<dim>::unit_vector(dim-1)),
 background_velocity_gradient(),
 // triangulation
 triangulation(),
@@ -45,7 +43,7 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
               << "The governing equations are\n\n"
               << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
               << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V)\n"
-              << "\t\t\t\t= - grad(p),\n\n"
+              << "\t\t\t\t= - grad(p),\n\n";
 
    std::cout << std::endl << "You have chosen the following parameter set:";
 
@@ -108,7 +106,7 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     data_out.add_data_vector(cell_viscosity_velocity,
                              "cell_viscosity_velocity");
 
-    data_out.build_patches(std::min(parameters.density_degree, parameters.velocity_degree));
+    data_out.build_patches(parameters.velocity_degree - 1);
 
     // write output to disk
     const std::string filename = ("solution-" +
@@ -198,7 +196,6 @@ void TopographySolver<dim>::run()
 
         if (cycle == 0)
             initial_step = false;
-
     }
 }
 }  // namespace TopographyProblem

@@ -28,7 +28,6 @@ struct Parameters
     double wave_length;
 
     // discretization parameters
-    unsigned int density_degree;
     unsigned int velocity_degree;
 
     // entropy viscosity parameters

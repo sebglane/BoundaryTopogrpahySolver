@@ -15,7 +15,6 @@ Parameters::Parameters(const std::string &parameter_filename)
 wave_length(1e5),
 amplitude(50),
 // discretization parameters
-density_degree(1),
 velocity_degree(2),
 // refinement parameters
 n_refinements(1),
@@ -82,11 +81,6 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 "Polynomial degree of the velocity discretization. The polynomial "
                 "degree of the pressure is automatically set to one less than the velocity.");
 
-        prm.declare_entry("density_degree",
-                "1",
-                Patterns::Integer(1,2),
-                "Polynomial degree of the density discretization.");
-
         prm.enter_subsection("entropy viscosity parameters");
         {
             prm.declare_entry("c_velocity",
@@ -107,7 +101,7 @@ void Parameters::declare_parameters(ParameterHandler &prm)
             prm.declare_entry("n_refinements",
                     "1",
                     Patterns::Integer(),
-                    "number of refinements.");
+                    "number of refinements");
 
             prm.declare_entry("n_initial_refinements",
                     "1",
@@ -150,7 +144,6 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     prm.enter_subsection("discretization parameters");
     {
         velocity_degree = prm.get_integer("velocity_degree");
-        density_degree = prm.get_integer("density_degree");
 
         prm.enter_subsection("refinement parameters");
         {
