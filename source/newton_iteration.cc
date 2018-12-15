@@ -10,9 +10,9 @@
 namespace TopographyProblem {
 
 template<int dim>
-void TopographySolver<dim>::newton_iteration(const double tolerance,
+void TopographySolver<dim>::newton_iteration(const double       tolerance,
                                              const unsigned int max_iteration,
-                                             const bool is_initial_step)
+                                             const bool         is_initial_step)
 {
     double current_res  = 1.0;
     double last_res     = 1.0;
@@ -30,7 +30,6 @@ void TopographySolver<dim>::newton_iteration(const double tolerance,
             assemble_system(first_step);
             solve(first_step);
             present_solution = newton_update;
-            nonzero_constraints.distribute(present_solution);
             first_step = false;
             // compute residual
             evaluation_point = present_solution;
@@ -52,7 +51,8 @@ void TopographySolver<dim>::newton_iteration(const double tolerance,
                 nonzero_constraints.distribute(evaluation_point);
                 assemble_rhs(first_step);
                 current_res = system_rhs.l2_norm();
-                std::cout << "      alpha = " << std::setw(6) << alpha << std::setw(0)
+                std::cout << "      alpha = " << std::setw(6)
+                          << alpha << std::setw(0)
                           << " residual = " << current_res
                           << std::endl;
                 if (current_res < last_res)

@@ -23,17 +23,10 @@ void TopographySolver<dim>::solve(const bool initial_step)
     SparseDirectUMFPACK     direct_solver;
     direct_solver.solve(system_matrix, system_rhs);
 
-    present_solution = system_rhs;
+    newton_update = system_rhs;
     const ConstraintMatrix &constraints_used = (initial_step ? nonzero_constraints
                                                     : zero_constraints);
-
-    constraints_used.distribute(present_solution);
-
-    const double mean_pressure = VectorTools::compute_mean_value(dof_handler,
-                                                                 QGauss<dim>(parameters.velocity_degree + 1),
-                                                                 present_solution,
-                                                                 dim+1);
-    present_solution.block(2).add(-mean_pressure);
+    constraints_used.distribute(newton_update);
 }
 
 }  // namespace TopographyProblem
