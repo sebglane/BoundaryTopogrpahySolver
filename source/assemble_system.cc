@@ -20,17 +20,10 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
 {
     TimerOutput::Scope timer_section(computing_timer, "assembly");
 
-    std::cout << "   Assembling system..." << std::endl;
-
     // preparations for entropy viscosity
-    std::pair<double,double> density_range;
-    double average_density, global_entropy_variation;
-    if (assemble_matrix)
-    {
-        density_range = get_density_range();
-        average_density = 0.5 * (density_range.first + density_range.second);
-        global_entropy_variation = get_entropy_variation(average_density);
-    }
+    const std::pair<double,double> density_range = get_density_range();
+    const double average_density = 0.5 * (density_range.first + density_range.second);
+    const double global_entropy_variation = get_entropy_variation(average_density);
     // maximum viscosities
     double max_nu_density = -std::numeric_limits<double>::max();
     double max_nu_velocity = -std::numeric_limits<double>::max();
@@ -214,13 +207,13 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
                                     local_matrix(i, j) += (
                                             // continuity equation
                                               phi_density[j] * normal_vectors[q] * background_velocity_value * phi_density[i]
-                                            + phi_density[j] * normal_vectors[q] * present_velocity_values[q] * phi_density[i]
-                                            + present_density_values[q] * normal_vectors[q] * phi_velocity[j] * phi_density[i]
+                                            + phi_density[j] * normal_vectors[q] * present_face_velocity_values[q] * phi_density[i]
+                                            + present_face_density_values[q] * normal_vectors[q] * phi_velocity[j] * phi_density[i]
                                             ) * fe_face_values.JxW(q);
                             local_rhs(i) += (
                                     // continuity equation
-                                      present_density_values[q] * normal_vectors[q] * background_velocity_value * phi_density[i]
-                                    + present_density_values[q] * normal_vectors[q] * present_velocity_values[q] * phi_density[i]
+                                      present_face_density_values[q] * normal_vectors[q] * background_velocity_value * phi_density[i]
+                                    + present_face_density_values[q] * normal_vectors[q] * present_face_velocity_values[q] * phi_density[i]
                                     ) * fe_face_values.JxW(q);
                         }
                     }
@@ -239,19 +232,23 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
         else
             constraints_used.distribute_local_to_global(local_rhs,
                                                         local_dof_indices,
-                                                        local_rhs);
-        }
-    std::cout << "      maximum viscosity (density): "
-              << max_nu_density
-              << std::endl;
-    std::cout << "      maximum viscosity (velocity): "
-              << max_nu_velocity
-              << std::endl;
+                                                        system_rhs);
+    }
+    if (assemble_matrix)
+    {
+        std::cout << "      maximum viscosity (density): "
+                  << max_nu_density
+                  << std::endl;
+        std::cout << "      maximum viscosity (velocity): "
+                  << max_nu_velocity
+                  << std::endl;
+    }
 }
 
 template<int dim>
 void TopographySolver<dim>::assemble_system(const bool initial_step)
 {
+    std::cout << "   Assembling system..." << std::endl;
     assemble(initial_step, true);
 }
 
