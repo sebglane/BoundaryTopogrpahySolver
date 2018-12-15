@@ -11,17 +11,9 @@ namespace TopographyProblem {
 
 Parameters::Parameters(const std::string &parameter_filename)
 :
-read_dimensional_input(false),
 // geometry parameters
 wave_length(1e5),
 amplitude(50),
-// physics parameters
-Froude(1.0  ),
-S(1.0),
-// linear solver parameters
-rel_tol(1e-6),
-abs_tol(1e-12),
-n_max_iter(100),
 // discretization parameters
 density_degree(1),
 velocity_degree(2),
@@ -30,9 +22,6 @@ n_refinements(1),
 n_initial_refinements(4),
 n_boundary_refinements(1),
 // entropy viscosity parameters
-apply_entropy_viscosity(true),
-c_max(0.5),
-c_entropy(10.0),
 c_velocity(0.5),
 default_viscosity(0.1),
 // newton iteration control
@@ -85,35 +74,6 @@ void Parameters::declare_parameters(ParameterHandler &prm)
     }
     prm.leave_subsection();
 
-    prm.enter_subsection("runtime parameters");
-    {
-        prm.declare_entry("read_dimensional_input",
-                          "false",
-                          Patterns::Bool(),
-                          "program reads dimensional parameter and computes"
-                          "dimensionless numbers");
-    }
-    prm.leave_subsection();
-
-    prm.enter_subsection("dimensional physics parameters");
-    {
-        prm.declare_entry("buoyancy_frequency",
-                "0.729e-4",
-                Patterns::Double(0.),
-                "buoyancy frequency in 1 / s");
-
-        prm.declare_entry("reference_velocity",
-                "5.0e-4",
-                Patterns::Double(0.),
-                "fluid velocity in m / s");
-
-        prm.declare_entry("reference_gravity",
-                "10.0",
-                Patterns::Double(0.),
-                "gravitional acceleration in m / s^2");
-    }
-    prm.leave_subsection();
-
     prm.enter_subsection("discretization parameters");
     {
         prm.declare_entry("velocity_degree",
@@ -129,25 +89,11 @@ void Parameters::declare_parameters(ParameterHandler &prm)
 
         prm.enter_subsection("entropy viscosity parameters");
         {
-            prm.declare_entry("c_max",
-                    "0.5",
-                    Patterns::Double(0.),
-                    "entropy viscosity control parameter");
-
-            prm.declare_entry("c_entropy",
-                    "1.0",
-                    Patterns::Double(0.),
-                    "entropy viscosity control parameter");
-
             prm.declare_entry("c_velocity",
                     "0.5",
                     Patterns::Double(0.),
                     "viscosity control parameter for velocitys");
 
-            prm.declare_entry("apply_entropy_viscosity",
-                    "false",
-                    Patterns::Bool(),
-                    "default viscosity applied in initial step");
 
             prm.declare_entry("default_viscosity",
                     "0.1",
@@ -177,21 +123,6 @@ void Parameters::declare_parameters(ParameterHandler &prm)
     }
     prm.leave_subsection();
 
-    prm.enter_subsection("dimensionless physics parameters");
-    {
-        prm.declare_entry("Froude",
-                "1.0",
-                Patterns::Double(0.),
-                "Froude number");
-
-        prm.declare_entry("stratification_number",
-                "1.0e-3",
-                Patterns::Double(),
-                "dimensionless number describing strength of stratification: N^2 l / g ");
-
-    }
-    prm.leave_subsection();
-
     prm.enter_subsection("Newton iteration control");
     {
         prm.declare_entry("tolerance",
@@ -216,12 +147,6 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     }
     prm.leave_subsection();
 
-    prm.enter_subsection("runtime parameters");
-    {
-        read_dimensional_input = prm.get_bool("read_dimensional_input");
-    }
-    prm.leave_subsection();
-
     prm.enter_subsection("discretization parameters");
     {
         velocity_degree = prm.get_integer("velocity_degree");
@@ -237,40 +162,12 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
         prm.enter_subsection("entropy viscosity parameters");
         {
-            apply_entropy_viscosity = prm.get_bool("apply_entropy_viscosity");
-            c_max = prm.get_double("c_max");
-            c_entropy = prm.get_double("c_entropy");
             c_velocity = prm.get_double("c_velocity");
             default_viscosity =  prm.get_double("default_viscosity");
         }
         prm.leave_subsection();
     }
     prm.leave_subsection();
-
-    if (read_dimensional_input)
-    {
-
-        prm.enter_subsection("dimensional physics parameters");
-        {
-            buoyancy_frequency = prm.get_double("buoyancy_frequency");
-
-            reference_velocity = prm.get_double("reference_velocity");
-            reference_gravity = prm.get_double("reference_gravity");
-
-            compute_dimensionless_numbers();
-        }
-        prm.leave_subsection();
-    }
-    else
-    {
-        prm.enter_subsection("dimensionless physics parameters");
-        {
-            Froude = prm.get_double("Froude");
-            S = prm.get_double("stratification_number");
-
-        }
-        prm.leave_subsection();
-    }
 
     prm.enter_subsection("Newton iteration control");
     {
@@ -279,12 +176,4 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     }
     prm.leave_subsection();
 }
-
-void Parameters::compute_dimensionless_numbers()
-{
-    Froude = reference_velocity / std::sqrt(wave_length * reference_gravity);
-    S = buoyancy_frequency * buoyancy_frequency * wave_length / reference_gravity;
-}
-
-
 }  // namespace BuoyantFluid

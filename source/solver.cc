@@ -31,62 +31,37 @@ gravity_vector(-Point<dim>::unit_vector(dim-1)),
 background_velocity_value(Point<dim>::unit_vector(0)),
 background_density_gradient(-Point<dim>::unit_vector(dim-1)),
 background_velocity_gradient(),
-// coefficients
-equation_coefficients{parameters.S,
-                      1. / (parameters.Froude * parameters.Froude)},
 // triangulation
 triangulation(),
 // finite element part
-fe_system(FE_Q<dim>(parameters.density_degree), 1,
-          FESystem<dim>(FE_Q<dim>(parameters.velocity_degree), dim), 1,
+fe_system(FESystem<dim>(FE_Q<dim>(parameters.velocity_degree), dim), 1,
           FE_Q<dim>(parameters.velocity_degree - 1), 1),
 dof_handler(triangulation),
 // monitor
 computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
 {
     std::cout << "Topography solver by S. Glane\n"
-              << "This program solves inviscid flow over topography in a stratified layer.\n"
+              << "This program solves inviscid flow over topography.\n"
               << "The governing equations are\n\n"
-              << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
               << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
               << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V)\n"
-              << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
-              << "The stratification parameter S and the Froude, Fr, are given by:\n\n";
-
-    // generate a nice table of the equation coefficients
-    std::cout << "+-----------+---------------+\n"
-              << "|    S      |      Fr       |\n"
-              << "+-------------------+-------+\n"
-              << "| N^2 l / g | V / sqrt(g l) |\n"
-              << "+-------------------+-------+\n";
+              << "\t\t\t\t= - grad(p),\n\n"
 
    std::cout << std::endl << "You have chosen the following parameter set:";
 
    std::stringstream ss;
-   ss << "+----------+----------+----------+----------+\n"
-      << "|    k     |    h     |    S     |    Fr    |\n"
-      << "+----------+----------+----------+----------+\n"
+   ss << "+----------+----------+\n"
+      << "|    k     |    h     |\n"
+      << "+----------+----------+\n"
       << "| "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wave_length
       << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
-      << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S
-      << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
       << " |\n"
-      << "+----------+----------+----------+----------+\n";
+      << "+----------+----------+\n";
 
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;
-
-   const double omega = 2. * numbers::PI * parameters.Froude;
-   const double N = std::sqrt(parameters.S);
-
-   if (omega > N)
-       std::cout << "omega^2 > N^2" << std::endl;
-   else if (omega < N)
-       std::cout << "omega^2 < N^2" << std::endl;
 }
 
 template<int dim>
@@ -102,63 +77,34 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     data_out.add_data_vector(present_solution, postprocessor);
 
     // compute cell viscosity
-    Vector<double>  cell_viscosity_density(triangulation.n_active_cells());
     Vector<double>  cell_viscosity_velocity(triangulation.n_active_cells());
     {
-        const std::pair<double,double> density_range = get_density_range();
-        const double average_density = 0.5 * (density_range.first + density_range.second);
-        const double global_entropy_variation =
-                get_entropy_variation(average_density);
         QMidpoint<dim>      quadrature;
 
         FEValues<dim>       fe_values(fe_system,
                                       quadrature,
-                                      update_values|
-                                      update_gradients);
+                                      update_values);
 
         const unsigned int n_q_points    = quadrature.size();
-
-        // density part
-        std::vector<double>         present_density_values(n_q_points);
-        std::vector<Tensor<1,dim>>  present_density_gradients(n_q_points);
 
         // momentum part
         std::vector<Tensor<1,dim>>  present_velocity_values(n_q_points);
         std::vector<double>         present_velocity_divergences(n_q_points);
 
-        const FEValuesExtractors::Scalar    density(0);
-        const FEValuesExtractors::Vector    velocity(1);
+        const FEValuesExtractors::Vector    velocity(0);
 
         for (auto cell: dof_handler.active_cell_iterators())
         {
             fe_values.reinit(cell);
 
-            // compute present values for entropy viscosity
-            fe_values[density].get_function_values(present_solution,
-                                                   present_density_values);
-            fe_values[density].get_function_gradients(present_solution,
-                                                      present_density_gradients);
             fe_values[velocity].get_function_values(present_solution,
                                                     present_velocity_values);
-            fe_values[velocity].get_function_divergences(present_solution,
-                                                       present_velocity_divergences);
-            // entropy viscosity density equation
-            const double nu_density = compute_density_viscosity(present_density_values,
-                                                                present_density_gradients,
-                                                                present_velocity_values,
-                                                                present_velocity_divergences,
-                                                                average_density,
-                                                                global_entropy_variation,
-                                                                cell->diameter());
-            cell_viscosity_density(cell->index()) = nu_density;
-            // entropy viscosity momentum equation
+            // viscosity momentum equation
             const double nu_velocity = compute_velocity_viscosity(present_velocity_values,
                                                                   cell->diameter());
             cell_viscosity_velocity(cell->index()) = nu_velocity;
         }
     }
-    data_out.add_data_vector(cell_viscosity_density,
-                             "cell_viscosity_density");
     data_out.add_data_vector(cell_viscosity_velocity,
                              "cell_viscosity_velocity");
 
