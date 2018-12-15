@@ -131,6 +131,15 @@ void TopographySolver<dim>::setup_dofs()
          nonzero_constraints,
          fe_system.component_mask(velocity));
 
+        // constrain pressure at bottom
+        const FEValuesExtractors::Scalar    pressure(dim+1);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         nonzero_constraints,
+         fe_system.component_mask(pressure));
+
         nonzero_constraints.close();
     }
     // zero constraints
@@ -149,16 +158,10 @@ void TopographySolver<dim>::setup_dofs()
         std::set<types::boundary_id> no_normal_flux_boundaries;
         no_normal_flux_boundaries.insert(DomainIdentifiers::BoundaryIds::TopoBndry);
 
-        const Functions::ZeroFunction<dim>                  velocity_boundary_values(dim);
-        std::map<types::boundary_id, const Function<dim> *> function_map;
-        for (const auto it: no_normal_flux_boundaries)
-          function_map[it] = &velocity_boundary_values;
-
-        VectorTools::compute_nonzero_normal_flux_constraints
+        VectorTools::compute_no_normal_flux_constraints
         (dof_handler,
          1,
          no_normal_flux_boundaries,
-         function_map,
          zero_constraints);
 
         // zero function
@@ -181,6 +184,15 @@ void TopographySolver<dim>::setup_dofs()
          zero_function,
          zero_constraints,
          fe_system.component_mask(velocity));
+
+        // constrain pressure at bottom
+        const FEValuesExtractors::Scalar    pressure(dim+1);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         nonzero_constraints,
+         fe_system.component_mask(pressure));
 
         zero_constraints.close();
     }
@@ -229,7 +241,7 @@ void TopographySolver<dim>::setup_system_matrix
     DoFTools::make_sparsity_pattern(dof_handler,
                                     coupling,
                                     dsp,
-                                    nonzero_constraints);
+                                    zero_constraints);
 
     sparsity_pattern.copy_from(dsp);
 
