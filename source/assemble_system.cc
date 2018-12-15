@@ -212,8 +212,8 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
                                             ) * fe_face_values.JxW(q);
                             local_rhs(i) += (
                                     // continuity equation
-                                      present_face_density_values[q] * normal_vectors[q] * background_velocity_value * phi_density[i]
-                                    + present_face_density_values[q] * normal_vectors[q] * present_face_velocity_values[q] * phi_density[i]
+                                    - present_face_density_values[q] * normal_vectors[q] * background_velocity_value * phi_density[i]
+                                    - present_face_density_values[q] * normal_vectors[q] * present_face_velocity_values[q] * phi_density[i]
                                     ) * fe_face_values.JxW(q);
                         }
                     }
@@ -223,6 +223,7 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
 
         const ConstraintMatrix &constraints_used = (initial_step ? nonzero_constraints
                                                         : zero_constraints);
+
         if (assemble_matrix)
             constraints_used.distribute_local_to_global(local_matrix,
                                                         local_rhs,
