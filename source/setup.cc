@@ -33,7 +33,7 @@ void TopographySolver<dim>::setup_dofs()
     DoFRenumbering::block_wise(dof_handler);
 
     // IO
-    std::vector<types::global_dof_index> dofs_per_block(3);
+    std::vector<types::global_dof_index> dofs_per_block(2);
     DoFTools::count_dofs_per_block(dof_handler,
                                    dofs_per_block);
 
@@ -43,14 +43,11 @@ void TopographySolver<dim>::setup_dofs()
               << "      Number of degrees of freedom: "
               << dof_handler.n_dofs()
               << std::endl
-              << "      Number of density degrees of freedom: "
+              << "      Number of velocity degrees of freedom: "
               << dofs_per_block[0]
               << std::endl
-              << "      Number of velocity degrees of freedom: "
-              << dofs_per_block[1]
-              << std::endl
               << "      Number of pressure degrees of freedom: "
-              << dofs_per_block[2]
+              << dofs_per_block[1]
               << std::endl;
 
     // periodicity of grid faces
@@ -105,25 +102,16 @@ void TopographySolver<dim>::setup_dofs()
 
         VectorTools::compute_nonzero_normal_flux_constraints
         (dof_handler,
-         1,
+         0,
          no_normal_flux_boundaries,
          function_map,
          nonzero_constraints);
 
         // zero function
-        const Functions::ZeroFunction<dim>  zero_function(dim+2);
-
-        // constrain density at bottom
-        const FEValuesExtractors::Scalar    density(0);
-        VectorTools::interpolate_boundary_values
-        (dof_handler,
-         DomainIdentifiers::Bottom,
-         zero_function,
-         nonzero_constraints,
-         fe_system.component_mask(density));
+        const Functions::ZeroFunction<dim>  zero_function(dim+1);
 
         // constrain velocity at bottom
-        const FEValuesExtractors::Vector    velocity(1);
+        const FEValuesExtractors::Vector    velocity(0);
         VectorTools::interpolate_boundary_values
         (dof_handler,
          DomainIdentifiers::Bottom,
@@ -132,7 +120,7 @@ void TopographySolver<dim>::setup_dofs()
          fe_system.component_mask(velocity));
 
         // constrain pressure at bottom
-        const FEValuesExtractors::Scalar    pressure(dim+1);
+        const FEValuesExtractors::Scalar    pressure(dim);
         VectorTools::interpolate_boundary_values
         (dof_handler,
          DomainIdentifiers::Bottom,
@@ -160,24 +148,15 @@ void TopographySolver<dim>::setup_dofs()
 
         VectorTools::compute_no_normal_flux_constraints
         (dof_handler,
-         1,
+         0,
          no_normal_flux_boundaries,
          zero_constraints);
 
         // zero function
-        const Functions::ZeroFunction<dim>  zero_function(dim+2);
-
-        // constrain density at bottom
-        const FEValuesExtractors::Scalar    density(0);
-        VectorTools::interpolate_boundary_values
-        (dof_handler,
-         DomainIdentifiers::Bottom,
-         zero_function,
-         zero_constraints,
-         fe_system.component_mask(density));
+        const Functions::ZeroFunction<dim>  zero_function(dim+1);
 
         // constrain velocity at bottom
-        const FEValuesExtractors::Vector    velocity(1);
+        const FEValuesExtractors::Vector    velocity(0);
         VectorTools::interpolate_boundary_values
         (dof_handler,
          DomainIdentifiers::Bottom,
@@ -186,7 +165,7 @@ void TopographySolver<dim>::setup_dofs()
          fe_system.component_mask(velocity));
 
         // constrain pressure at bottom
-        const FEValuesExtractors::Scalar    pressure(dim+1);
+        const FEValuesExtractors::Scalar    pressure(dim);
         VectorTools::interpolate_boundary_values
         (dof_handler,
          DomainIdentifiers::Bottom,
@@ -213,27 +192,17 @@ void TopographySolver<dim>::setup_system_matrix
     system_matrix.clear();
 
     Table<2,DoFTools::Coupling> coupling;
-    coupling.reinit(dim+2, dim+2);
-
-    // density-density coupling
-    coupling[0][0] = DoFTools::always;
-
-    // density-velocity coupling
-    for (unsigned int c=0; c<dim; ++c)
-    {
-        coupling[0][c+1] = DoFTools::always;
-        coupling[c+1][0] = DoFTools::always;
-    }
+    coupling.reinit(dim+1, dim+1);
 
     // momentum-momentum coupling
     for (unsigned int c=0; c<dim+1; ++c)
         for (unsigned int d=0; d<dim+1; ++d)
             if (c<dim || d<dim)
-                coupling[c+1][d+1] = DoFTools::always;
+                coupling[c][d] = DoFTools::always;
             else if ((c==dim && d<dim) || (c<dim && d==dim))
-                coupling[c+1][d+1] = DoFTools::always;
+                coupling[c][d] = DoFTools::always;
             else
-                coupling[c+1][d+1] = DoFTools::none;
+                coupling[c][d] = DoFTools::none;
 
     BlockDynamicSparsityPattern dsp(dofs_per_block,
                                     dofs_per_block);

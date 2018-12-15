@@ -20,8 +20,6 @@ template<int dim>
 std::vector<std::string> PostProcessor<dim>::get_names() const
 {
     std::vector<std::string> solution_names;
-    // density
-    solution_names.push_back("density");
     // velocity
     for (unsigned int d=0; d<dim; ++d)
         solution_names.push_back("velocity");
@@ -47,8 +45,6 @@ PostProcessor<dim>::get_data_component_interpretation() const
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
     component_interpretation;
 
-    // density
-    component_interpretation.push_back(DataComponentInterpretation::component_is_scalar);
     // velocity
     for (unsigned int d=0; d<dim; ++d)
         component_interpretation.push_back(DataComponentInterpretation::component_is_part_of_vector);
@@ -74,23 +70,21 @@ void PostProcessor<dim>::evaluate_vector_field(
     AssertDimension(computed_quantities.size(),
                     n_quadrature_points);
     AssertDimension(inputs.solution_values[0].size(),
-                    dim+2);
+                    dim+1);
 
     for (unsigned int q=0; q<n_quadrature_points; ++q)
     {
-        AssertDimension(computed_quantities[q].size(), 2*dim+2);
-        // density
-        computed_quantities[q][0] = inputs.solution_values[q][0];
+        AssertDimension(computed_quantities[q].size(), 2*dim+1);
         // velocity
         for (unsigned int d=0; d<dim; ++d)
-            computed_quantities[q][d+1] = inputs.solution_values[q][d+1];
+            computed_quantities[q][d+1] = inputs.solution_values[q][d];
         // pressure
-        computed_quantities[q][dim+1] = inputs.solution_values[q][dim+1];
+        computed_quantities[q][dim+1] = inputs.solution_values[q][dim];
         // total velocity
         background_velocity.vector_value(inputs.evaluation_points[q],
                                          background_velocity_values);
         for (unsigned int d=0; d<dim; ++d)
-            computed_quantities[q][d+dim+2] = inputs.solution_values[q][d+1]
+            computed_quantities[q][d+dim+1] = inputs.solution_values[q][d]
                                             + background_velocity_values[d]  ;
     }
 }

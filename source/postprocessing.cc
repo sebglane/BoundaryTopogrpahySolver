@@ -28,7 +28,7 @@ Tensor<1,dim> TopographySolver<dim>::compute_boundary_traction() const
                                        update_normal_vectors|
                                        update_JxW_values);
 
-    const FEValuesExtractors::Scalar    pressure(dim+1);
+    const FEValuesExtractors::Scalar    pressure(dim);
 
     const unsigned int      n_face_q_points = face_quadrature.size();
     std::vector<double>     present_pressure_values(n_face_q_points);
