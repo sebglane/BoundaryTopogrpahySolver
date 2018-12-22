@@ -84,7 +84,7 @@ void TopographySolver<dim>::setup_dofs()
         nonzero_constraints.clear();
 
         DoFTools::make_hanging_node_constraints(dof_handler,
-                nonzero_constraints);
+                                                nonzero_constraints);
 
         // periodic boundary conditions for density
         DoFTools::make_periodicity_constraints<DoFHandler<dim>>
@@ -108,7 +108,7 @@ void TopographySolver<dim>::setup_dofs()
          nonzero_constraints);
 
         // zero function
-        const Functions::ZeroFunction<dim>  zero_function(dim+1);
+        const Functions::ZeroFunction<dim>   zero_function(dim+1);
 
         // constrain velocity at bottom
         const FEValuesExtractors::Vector    velocity(0);
@@ -119,15 +119,6 @@ void TopographySolver<dim>::setup_dofs()
          nonzero_constraints,
          fe_system.component_mask(velocity));
 
-        // constrain pressure at bottom
-        const FEValuesExtractors::Scalar    pressure(dim);
-        VectorTools::interpolate_boundary_values
-        (dof_handler,
-         DomainIdentifiers::Bottom,
-         zero_function,
-         nonzero_constraints,
-         fe_system.component_mask(pressure));
-
         nonzero_constraints.close();
     }
     // zero constraints
@@ -135,7 +126,7 @@ void TopographySolver<dim>::setup_dofs()
         zero_constraints.clear();
 
         DoFTools::make_hanging_node_constraints(dof_handler,
-                zero_constraints);
+                                                zero_constraints);
 
         // periodic boundary conditions for density
         DoFTools::make_periodicity_constraints<DoFHandler<dim>>
@@ -163,15 +154,6 @@ void TopographySolver<dim>::setup_dofs()
          zero_function,
          zero_constraints,
          fe_system.component_mask(velocity));
-
-        // constrain pressure at bottom
-        const FEValuesExtractors::Scalar    pressure(dim);
-        VectorTools::interpolate_boundary_values
-        (dof_handler,
-         DomainIdentifiers::Bottom,
-         zero_function,
-         nonzero_constraints,
-         fe_system.component_mask(pressure));
 
         zero_constraints.close();
     }

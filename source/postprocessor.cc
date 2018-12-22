@@ -77,9 +77,9 @@ void PostProcessor<dim>::evaluate_vector_field(
         AssertDimension(computed_quantities[q].size(), 2*dim+1);
         // velocity
         for (unsigned int d=0; d<dim; ++d)
-            computed_quantities[q][d+1] = inputs.solution_values[q][d];
+            computed_quantities[q][d] = inputs.solution_values[q][d];
         // pressure
-        computed_quantities[q][dim+1] = inputs.solution_values[q][dim];
+        computed_quantities[q][dim] = inputs.solution_values[q][dim];
         // total velocity
         background_velocity.vector_value(inputs.evaluation_points[q],
                                          background_velocity_values);
