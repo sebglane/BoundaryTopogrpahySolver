@@ -30,6 +30,7 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             assemble_system(first_step);
             solve(first_step);
             present_solution = newton_update;
+            nonzero_constraints.distribute(present_solution);
             first_step = false;
             // compute residual
             evaluation_point = present_solution;
@@ -44,7 +45,7 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             solve(first_step);
             // line search
             std::cout << "   Line search: " << std::endl;
-            for (double alpha = 1.0; alpha > 1e-5; alpha *= 0.5)
+            for (double alpha = 1.0; alpha > 1e-4; alpha *= 0.5)
             {
                 evaluation_point = present_solution;
                 evaluation_point.add(alpha, newton_update);
@@ -52,7 +53,8 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
                 assemble_rhs(first_step);
                 current_res = system_rhs.l2_norm();
                 std::cout << "      alpha = " << std::setw(6)
-                          << alpha << std::setw(0)
+                          << std::scientific << alpha << std::fixed
+                          << std::setw(0)
                           << " residual = " << current_res
                           << std::endl;
                 if (current_res < last_res)
@@ -61,7 +63,10 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             present_solution = evaluation_point;
         }
         // output residual
-        std::cout << "   Iteration: " << iteration << ", residual: " << current_res << std::endl;
+        std::cout << "   Iteration: " << iteration
+                  << ", residual: "
+                  << std::scientific << current_res << std::fixed
+                  << std::endl;
         // update residual
         last_res = current_res;
         ++iteration;
