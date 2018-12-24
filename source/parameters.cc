@@ -18,6 +18,7 @@ amplitude(50),
 // physics parameters
 Froude(1.0  ),
 S(1.0),
+Rossby(1.0),
 // linear solver parameters
 rel_tol(1e-6),
 abs_tol(1e-12),
@@ -107,6 +108,22 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Double(0.),
                 "fluid velocity in m / s");
 
+
+        prm.declare_entry("reference_rotation_rate",
+                "0.729e-4",
+                Patterns::Double(0.),
+                "planetary rotation rate in 1 / s");
+
+        prm.declare_entry("reference_density",
+                "1.0e4",
+                Patterns::Double(0.),
+                "fluid density in kg / m^3");
+
+        prm.declare_entry("reference_field",
+                "0.65e-3",
+                Patterns::Double(0.),
+                "magnetic field in T");
+
         prm.declare_entry("reference_gravity",
                 "10.0",
                 Patterns::Double(0.),
@@ -189,6 +206,11 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Double(),
                 "dimensionless number describing strength of stratification: N^2 l / g ");
 
+        prm.declare_entry("Rossby",
+                "1.0",
+                Patterns::Double(0.),
+                "Rossby number");
+
     }
     prm.leave_subsection();
 
@@ -254,6 +276,8 @@ void Parameters::parse_parameters(ParameterHandler &prm)
         {
             buoyancy_frequency = prm.get_double("buoyancy_frequency");
 
+            reference_rotation_rate = prm.get_double("reference_rotation_rate");
+            reference_density = prm.get_double("reference_density");
             reference_velocity = prm.get_double("reference_velocity");
             reference_gravity = prm.get_double("reference_gravity");
 
@@ -265,6 +289,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     {
         prm.enter_subsection("dimensionless physics parameters");
         {
+            Rossby = prm.get_double("Rossby");
             Froude = prm.get_double("Froude");
             S = prm.get_double("stratification_number");
 
@@ -282,7 +307,8 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
 void Parameters::compute_dimensionless_numbers()
 {
-    Froude = reference_velocity / std::sqrt(wave_length * reference_gravity);
+    Froude = reference_velocity / std::sqrt(reference_gravity * wave_length);
+    Rossby = reference_velocity / reference_rotation_rate / wave_length;
     S = buoyancy_frequency * buoyancy_frequency * wave_length / reference_gravity;
 }
 

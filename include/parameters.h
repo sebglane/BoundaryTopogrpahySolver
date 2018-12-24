@@ -32,14 +32,16 @@ struct Parameters
 
     // physics parameters
     double buoyancy_frequency;
-    double magnetic_diffusivity;
 
+    double reference_rotation_rate;
     double reference_velocity;
     double reference_gravity;
+    double reference_density;
 
     // dimensionless physics parameters
     double Froude;
     double S;
+    double Rossby;
 
     // linear solver parameters
     double          rel_tol;
