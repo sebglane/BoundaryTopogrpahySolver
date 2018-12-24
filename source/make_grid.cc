@@ -21,7 +21,7 @@ void TopographySolver<dim>::make_grid()
     std::cout << "   Making grid..." << std::endl;
 
     GridFactory::TopographyBox<dim>     topography_mesh(2.*numbers::PI,
-                                                        parameters.amplitude / parameters.wave_length);
+                                                        parameters.amplitude / parameters.wavelength);
 
     topography_mesh.create_coarse_mesh(triangulation);
 

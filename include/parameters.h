@@ -27,7 +27,7 @@ struct Parameters
 
     // mesh parameters
     double amplitude;
-    double wave_length;
+    double wavelength;
 
     // physics parameters
     double buoyancy_frequency;

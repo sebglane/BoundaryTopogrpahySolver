@@ -14,7 +14,7 @@ Parameters::Parameters(const std::string &parameter_filename)
 read_dimensional_input(false),
 // geometry parameters
 amplitude(50),
-wave_length(1e5),
+wavelength(1e5),
 // physics parameters
 Froude(1.0  ),
 S(1.0),
@@ -221,7 +221,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 {
     prm.enter_subsection("geometry parameters");
     {
-        wave_length = prm.get_double("wave_length");
+        wavelength = prm.get_double("wave_length");
         amplitude = prm.get_double("amplitude");
     }
     prm.leave_subsection();
@@ -292,9 +292,9 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
 void Parameters::compute_dimensionless_numbers()
 {
-    Froude = reference_velocity / std::sqrt(reference_gravity * wave_length);
-    Rossby = reference_velocity / reference_rotation_rate / wave_length;
-    S = buoyancy_frequency * buoyancy_frequency * wave_length / reference_gravity;
+    Froude = reference_velocity / std::sqrt(reference_gravity * wavelength);
+    Rossby = reference_velocity / reference_rotation_rate / wavelength;
+    S = buoyancy_frequency * buoyancy_frequency * wavelength / reference_gravity;
 }
 
 

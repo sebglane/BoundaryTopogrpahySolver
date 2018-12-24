@@ -70,7 +70,7 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
       << "|    k     |    h     |    S     |    Ro    |    Fr    |\n"
       << "+----------+----------+----------+----------+----------+\n"
       << "| "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wave_length
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wavelength
       << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
       << " | "
