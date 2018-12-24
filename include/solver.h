@@ -62,16 +62,8 @@ private:
 
     void refine_mesh();
 
-    double                      get_entropy_variation(const double average_density) const;
-    std::pair<double,double>    get_density_range() const;
-
     double                      compute_density_viscosity
-    (const std::vector<double>          &density_values,
-     const std::vector<Tensor<1,dim>>   &density_gradients,
-     const std::vector<Tensor<1,dim>>   &velocity_values,
-     const std::vector<double>   &velocity_divergences,
-     const double                        average_density,
-     const double                        global_entropy_variation,
+    (const std::vector<Tensor<1,dim>>   &velocity_values,
      const double                        cell_diameter) const;
 
     double                      compute_velocity_viscosity

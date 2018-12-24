@@ -20,10 +20,6 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
 {
     TimerOutput::Scope timer_section(computing_timer, "assembly");
 
-    // preparations for entropy viscosity
-    const std::pair<double,double> density_range = get_density_range();
-    const double average_density = 0.5 * (density_range.first + density_range.second);
-    const double global_entropy_variation = get_entropy_variation(average_density);
     // maximum viscosities
     double max_nu_density = -std::numeric_limits<double>::max();
     double max_nu_velocity = -std::numeric_limits<double>::max();
@@ -40,7 +36,8 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
                                   quadrature,
                                   update_values|
                                   update_JxW_values|
-                                  update_gradients);
+                                  update_gradients|
+                                  update_JxW_values);
     FEFaceValues<dim>   fe_face_values(fe_system,
                                        face_quadrature,
                                        update_values|
@@ -107,13 +104,8 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
         fe_values[velocity].get_function_values(evaluation_point,
                                                 present_velocity_values);
 
-        // entropy viscosity density equation
-        const double nu_density = compute_density_viscosity(present_density_values,
-                                                            present_density_gradients,
-                                                            present_velocity_values,
-                                                            present_velocity_divergences,
-                                                            average_density,
-                                                            global_entropy_variation,
+        // viscosity density equation
+        const double nu_density = compute_density_viscosity(present_velocity_values,
                                                             cell->diameter());
         max_nu_density = std::max(nu_density, max_nu_density);
 

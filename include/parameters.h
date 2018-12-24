@@ -24,7 +24,6 @@ struct Parameters
 
     // runtime parameters
     bool    read_dimensional_input;
-    bool    homogeneous_bc_at_bottom;
 
     // mesh parameters
     double amplitude;
@@ -53,9 +52,7 @@ struct Parameters
     unsigned int velocity_degree;
 
     // entropy viscosity parameters
-    bool    apply_entropy_viscosity;
-    double  c_max;
-    double  c_entropy;
+    double  c_density;
     double  c_velocity;
     double  default_viscosity;
 

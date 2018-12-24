@@ -54,7 +54,7 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
               << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
               << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + 2 / Ro  Omega x v\n"
               << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
-              << "The stratification parameter S and the Froude, Fr, are given by:\n\n";
+              << "The stratification parameter, S, the Rossby number, Ro, and the Froude number, Fr, are given by:\n\n";
 
     // generate a nice table of the equation coefficients
     std::cout << "+-----------+---------------+---------------+\n"
@@ -110,16 +110,11 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     Vector<double>  cell_viscosity_density(triangulation.n_active_cells());
     Vector<double>  cell_viscosity_velocity(triangulation.n_active_cells());
     {
-        const std::pair<double,double> density_range = get_density_range();
-        const double average_density = 0.5 * (density_range.first + density_range.second);
-        const double global_entropy_variation =
-                get_entropy_variation(average_density);
         QMidpoint<dim>      quadrature;
 
         FEValues<dim>       fe_values(fe_system,
                                       quadrature,
-                                      update_values|
-                                      update_gradients);
+                                      update_values);
 
         const unsigned int n_q_points    = quadrature.size();
 
@@ -139,21 +134,10 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
             fe_values.reinit(cell);
 
             // compute present values for entropy viscosity
-            fe_values[density].get_function_values(present_solution,
-                                                   present_density_values);
-            fe_values[density].get_function_gradients(present_solution,
-                                                      present_density_gradients);
             fe_values[velocity].get_function_values(present_solution,
                                                     present_velocity_values);
-            fe_values[velocity].get_function_divergences(present_solution,
-                                                       present_velocity_divergences);
             // entropy viscosity density equation
-            const double nu_density = compute_density_viscosity(present_density_values,
-                                                                present_density_gradients,
-                                                                present_velocity_values,
-                                                                present_velocity_divergences,
-                                                                average_density,
-                                                                global_entropy_variation,
+            const double nu_density = compute_density_viscosity(present_velocity_values,
                                                                 cell->diameter());
             cell_viscosity_density(cell->index()) = nu_density;
             // entropy viscosity momentum equation

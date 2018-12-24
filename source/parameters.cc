@@ -13,8 +13,8 @@ Parameters::Parameters(const std::string &parameter_filename)
 :
 read_dimensional_input(false),
 // geometry parameters
-wave_length(1e5),
 amplitude(50),
+wave_length(1e5),
 // physics parameters
 Froude(1.0  ),
 S(1.0),
@@ -26,19 +26,17 @@ n_max_iter(100),
 // discretization parameters
 density_degree(1),
 velocity_degree(2),
-// refinement parameters
-n_refinements(1),
-n_initial_refinements(4),
-n_boundary_refinements(1),
 // entropy viscosity parameters
-apply_entropy_viscosity(true),
-c_max(0.5),
-c_entropy(10.0),
+c_density(0.5),
 c_velocity(0.5),
 default_viscosity(0.1),
 // newton iteration control
 tolerance(1e-12),
-max_iter(15)
+max_iter(15),
+// refinement parameters
+n_refinements(1),
+n_initial_refinements(4),
+n_boundary_refinements(1)
 {
     ParameterHandler prm;
     declare_parameters(prm);
@@ -144,27 +142,17 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Integer(1,2),
                 "Polynomial degree of the density discretization.");
 
-        prm.enter_subsection("entropy viscosity parameters");
+        prm.enter_subsection("artificial viscosity parameters");
         {
-            prm.declare_entry("c_max",
+            prm.declare_entry("c_density",
                     "0.5",
                     Patterns::Double(0.),
-                    "entropy viscosity control parameter");
-
-            prm.declare_entry("c_entropy",
-                    "1.0",
-                    Patterns::Double(0.),
-                    "entropy viscosity control parameter");
+                    "viscosity control parameter for density equation");
 
             prm.declare_entry("c_velocity",
                     "0.5",
                     Patterns::Double(0.),
-                    "viscosity control parameter for velocitys");
-
-            prm.declare_entry("apply_entropy_viscosity",
-                    "false",
-                    Patterns::Bool(),
-                    "default viscosity applied in initial step");
+                    "viscosity control parameter for momentum equation");
 
             prm.declare_entry("default_viscosity",
                     "0.1",
@@ -257,11 +245,9 @@ void Parameters::parse_parameters(ParameterHandler &prm)
         }
         prm.leave_subsection();
 
-        prm.enter_subsection("entropy viscosity parameters");
+        prm.enter_subsection("artificial viscosity parameters");
         {
-            apply_entropy_viscosity = prm.get_bool("apply_entropy_viscosity");
-            c_max = prm.get_double("c_max");
-            c_entropy = prm.get_double("c_entropy");
+            c_density = prm.get_double("c_density");
             c_velocity = prm.get_double("c_velocity");
             default_viscosity =  prm.get_double("default_viscosity");
         }
