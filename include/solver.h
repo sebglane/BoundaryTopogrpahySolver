@@ -84,6 +84,7 @@ private:
 
     std::vector<double>         equation_coefficients;
 
+    const Tensor<1,dim>         rotation_vector;
     const Tensor<1,dim>         gravity_vector;
     const Tensor<1,dim>         background_velocity_value;
     const Tensor<1,dim>         background_density_gradient;

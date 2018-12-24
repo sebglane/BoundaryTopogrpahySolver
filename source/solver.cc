@@ -27,13 +27,16 @@ template<int dim>
 TopographySolver<dim>::TopographySolver(Parameters &parameters_)
 :
 parameters(parameters_),
+// coefficients
+equation_coefficients{parameters.S,
+                      1. / parameters.Rossby,
+                      1. / (parameters.Froude * parameters.Froude)},
+// model parameters
+rotation_vector(Point<dim>::unit_vector(dim-1)),
 gravity_vector(-Point<dim>::unit_vector(dim-1)),
 background_velocity_value(Point<dim>::unit_vector(0)),
 background_density_gradient(-Point<dim>::unit_vector(dim-1)),
 background_velocity_gradient(),
-// coefficients
-equation_coefficients{parameters.S,
-                      1. / (parameters.Froude * parameters.Froude)},
 // triangulation
 triangulation(),
 // finite element part
@@ -49,23 +52,23 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
               << "The governing equations are\n\n"
               << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
               << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
-              << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V)\n"
+              << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + 2 / Ro  Omega x v\n"
               << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
               << "The stratification parameter S and the Froude, Fr, are given by:\n\n";
 
     // generate a nice table of the equation coefficients
-    std::cout << "+-----------+---------------+\n"
-              << "|    S      |      Fr       |\n"
-              << "+-------------------+-------+\n"
-              << "| N^2 l / g | V / sqrt(g l) |\n"
-              << "+-------------------+-------+\n";
+    std::cout << "+-----------+---------------+---------------+\n"
+              << "|    S      |      Ro       |      Fr       |\n"
+              << "+-----------+---------------+---------------+\n"
+              << "| N^2 l / g | V / (Omega l) | V / sqrt(g l) |\n"
+              << "+-----------+---------------+---------------+\n";
 
    std::cout << std::endl << "You have chosen the following parameter set:";
 
    std::stringstream ss;
-   ss << "+----------+----------+----------+----------+\n"
-      << "|    k     |    h     |    S     |    Fr    |\n"
-      << "+----------+----------+----------+----------+\n"
+   ss << "+----------+----------+----------+----------+----------+\n"
+      << "|    k     |    h     |    S     |    Ro    |    Fr    |\n"
+      << "+----------+----------+----------+----------+----------+\n"
       << "| "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wave_length
       << " | "
@@ -73,9 +76,11 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
       << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S
       << " | "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby
+      << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
       << " |\n"
-      << "+----------+----------+----------+----------+\n";
+      << "+----------+----------+----------+----------+----------+\n";
 
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;

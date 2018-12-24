@@ -292,7 +292,6 @@ void Parameters::parse_parameters(ParameterHandler &prm)
             Rossby = prm.get_double("Rossby");
             Froude = prm.get_double("Froude");
             S = prm.get_double("stratification_number");
-
         }
         prm.leave_subsection();
     }
