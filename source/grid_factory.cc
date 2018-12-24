@@ -11,12 +11,14 @@
 namespace GridFactory {
 
 template <int dim>
-SinusoidalManifold<dim>::SinusoidalManifold(const double wavenumber,
-                                            const double amplitude)
+SinusoidalManifold<dim>::SinusoidalManifold(const double    wavenumber,
+                                            const double    amplitude,
+                                            const bool      single_wave)
 :
 ChartManifold<dim,dim,dim-1>(),
 wavenumber(wavenumber),
-amplitude(amplitude)
+amplitude(amplitude),
+single_wave(single_wave)
 {}
 
 template <int dim>
@@ -39,10 +41,17 @@ Point<dim> SinusoidalManifold<dim>::push_forward(const Point<dim-1> &chart_point
 {
     Point<dim> space_point;
     space_point[dim-1] = amplitude;
-    for (unsigned int d=0; d<dim-1; ++d)
+    if (!single_wave)
+        for (unsigned int d=0; d<dim-1; ++d)
+        {
+            space_point[d] = chart_point[d];
+            space_point[dim-1] *= std::sin(wavenumber * chart_point[d]);
+        }
+    else
     {
-        space_point[d] = chart_point[d];
-        space_point[dim-1] *= std::sin(wavenumber * chart_point[d]);
+        for (unsigned int d=0; d<dim-1; ++d)
+            space_point[d] = chart_point[d];
+        space_point[dim-1] *= std::sin(wavenumber * chart_point[0]);
     }
     space_point[dim-1] += 1.0;
     return space_point;
