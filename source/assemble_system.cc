@@ -156,8 +156,11 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
                                 + (background_velocity_gradient * phi_velocity[j]) * phi_velocity[i]
                                 + (grad_phi_velocity[j] * present_velocity_values[q]) * phi_velocity[i]
                                 + (present_velocity_gradients[q] * phi_velocity[j]) * phi_velocity[i]
+                                + (dim == 3?
+                                   equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, phi_velocity[j]) * phi_velocity[i]
+                                   : 0.)
                                 - phi_pressure[j] * div_phi_velocity[i]
-                                - equation_coefficients[1] * phi_density[j] * gravity_vector * phi_velocity[i]
+                                - equation_coefficients[2] * phi_density[j] * gravity_vector * phi_velocity[i]
                                ) * fe_values.JxW(q);
                 local_rhs(i) += (
                         // continuity equation
@@ -172,8 +175,11 @@ void TopographySolver<dim>::assemble(const bool initial_step, const bool assembl
                         - (present_velocity_gradients[q] * background_velocity_value) * phi_velocity[i]
                         - (background_velocity_gradient * present_velocity_values[q]) * phi_velocity[i]
                         - (present_velocity_gradients[q] * present_velocity_values[q]) * phi_velocity[i]
+                        - (dim == 3?
+                           equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, present_velocity_values[q]) * phi_velocity[i]
+                           : 0.)
                         + present_pressure_values[q] * div_phi_velocity[i]
-                        + equation_coefficients[1] * present_density_values[q] * gravity_vector * phi_velocity[i]
+                        + equation_coefficients[2] * present_density_values[q] * gravity_vector * phi_velocity[i]
                         ) * fe_values.JxW(q);
             }
         }
