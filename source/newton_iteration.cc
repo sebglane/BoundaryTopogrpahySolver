@@ -63,7 +63,7 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             present_solution = evaluation_point;
         }
         // output residual
-        std::cout << "   Iteration: " << iteration
+        std::cout << "Iteration: " << iteration
                   << ", residual: "
                   << std::scientific << current_res << std::fixed
                   << std::endl;
