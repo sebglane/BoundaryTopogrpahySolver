@@ -16,8 +16,6 @@ namespace TopographyProblem {
 template<int dim>
 void TopographySolver<dim>::solve(const bool initial_step)
 {
-    std::cout << "   Solving linear system..." << std::endl;
-
     TimerOutput::Scope timer_section(computing_timer, "linear solve");
 
     SparseDirectUMFPACK     direct_solver;
