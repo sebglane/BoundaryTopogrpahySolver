@@ -19,6 +19,8 @@ wavelength(1e5),
 Froude(1.0  ),
 S(1.0),
 Rossby(1.0),
+Alfven(1.0),
+magReynolds(1.0),
 // linear solver parameters
 rel_tol(1e-6),
 abs_tol(1e-12),
@@ -26,6 +28,7 @@ n_max_iter(100),
 // discretization parameters
 density_degree(1),
 velocity_degree(2),
+magnetic_degree(1),
 // entropy viscosity parameters
 c_density(0.5),
 c_velocity(0.5),
@@ -106,7 +109,6 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Double(0.),
                 "fluid velocity in m / s");
 
-
         prm.declare_entry("reference_rotation_rate",
                 "0.729e-4",
                 Patterns::Double(0.),
@@ -117,15 +119,20 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Double(0.),
                 "fluid density in kg / m^3");
 
+        prm.declare_entry("reference_gravity",
+                "10.0",
+                Patterns::Double(0.),
+                "gravitional acceleration in m / s^2");
+
         prm.declare_entry("reference_field",
                 "0.65e-3",
                 Patterns::Double(0.),
                 "magnetic field in T");
 
-        prm.declare_entry("reference_gravity",
-                "10.0",
+        prm.declare_entry("magnetic_diffusivity",
+                "0.8e-2",
                 Patterns::Double(0.),
-                "gravitional acceleration in m / s^2");
+                "magnetic diffusivity in m^2 / s");
     }
     prm.leave_subsection();
 
@@ -141,6 +148,12 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 "1",
                 Patterns::Integer(1,2),
                 "Polynomial degree of the density discretization.");
+
+
+        prm.declare_entry("magnetic_degree",
+                "1",
+                Patterns::Integer(1,2),
+                "Polynomial degree of the magnetic discretization.");
 
         prm.enter_subsection("artificial viscosity parameters");
         {
@@ -199,6 +212,15 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                 Patterns::Double(0.),
                 "Rossby number");
 
+        prm.declare_entry("Alfven",
+                "1.0e-3",
+                Patterns::Double(),
+                "Alfven number. Va / V, ratio of Alfven velocity to fluid velocity");
+
+        prm.declare_entry("magReynolds",
+                "1.0e-3",
+                Patterns::Double(),
+                "magnetic Reynolds number");
     }
     prm.leave_subsection();
 
@@ -236,6 +258,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     {
         velocity_degree = prm.get_integer("velocity_degree");
         density_degree = prm.get_integer("density_degree");
+        magnetic_degree = prm.get_integer("magnetic_degree");
 
         prm.enter_subsection("refinement parameters");
         {
@@ -266,6 +289,9 @@ void Parameters::parse_parameters(ParameterHandler &prm)
             reference_density = prm.get_double("reference_density");
             reference_velocity = prm.get_double("reference_velocity");
             reference_gravity = prm.get_double("reference_gravity");
+            reference_field = prm.get_double("reference_field");
+
+            magnetic_diffusivity = prm.get_double("magnetic_diffusivity");
 
             compute_dimensionless_numbers();
         }
@@ -278,6 +304,8 @@ void Parameters::parse_parameters(ParameterHandler &prm)
             Rossby = prm.get_double("Rossby");
             Froude = prm.get_double("Froude");
             S = prm.get_double("stratification_number");
+            Alfven= prm.get_double("Alfven");
+            magReynolds = prm.get_double("magReynolds");
         }
         prm.leave_subsection();
     }
@@ -292,9 +320,15 @@ void Parameters::parse_parameters(ParameterHandler &prm)
 
 void Parameters::compute_dimensionless_numbers()
 {
+    const double magnetic_permeability =  4. * numbers::PI * 1.0e-7;
+    const double alfven_velocity = reference_field
+            / std::sqrt(reference_density * magnetic_permeability);
+
     Froude = reference_velocity / std::sqrt(reference_gravity * wavelength);
     Rossby = reference_velocity / reference_rotation_rate / wavelength;
     S = buoyancy_frequency * buoyancy_frequency * wavelength / reference_gravity;
+    Alfven = alfven_velocity / reference_velocity;
+    magReynolds = reference_velocity * wavelength / magnetic_diffusivity;
 }
 
 

@@ -31,16 +31,20 @@ struct Parameters
 
     // physics parameters
     double buoyancy_frequency;
+    double magnetic_diffusivity;
 
     double reference_rotation_rate;
     double reference_velocity;
     double reference_gravity;
     double reference_density;
+    double reference_field;
 
     // dimensionless physics parameters
     double Froude;
     double S;
     double Rossby;
+    double Alfven;
+    double magReynolds;
 
     // linear solver parameters
     double          rel_tol;
@@ -50,6 +54,7 @@ struct Parameters
     // discretization parameters
     unsigned int density_degree;
     unsigned int velocity_degree;
+    unsigned int magnetic_degree;
 
     // entropy viscosity parameters
     double  c_density;
