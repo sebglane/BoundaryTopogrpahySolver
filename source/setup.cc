@@ -33,7 +33,7 @@ void TopographySolver<dim>::setup_dofs()
     DoFRenumbering::block_wise(dof_handler);
 
     // IO
-    std::vector<types::global_dof_index> dofs_per_block(3);
+    std::vector<types::global_dof_index> dofs_per_block(5);
     DoFTools::count_dofs_per_block(dof_handler,
                                    dofs_per_block);
 
@@ -51,6 +51,12 @@ void TopographySolver<dim>::setup_dofs()
               << std::endl
               << "      Number of pressure degrees of freedom: "
               << dofs_per_block[2]
+              << std::endl
+              << "      Number of magnetic degrees of freedom: "
+              << dofs_per_block[3]
+              << std::endl
+              << "      Number of auxiliary magnetic degrees of freedom: "
+              << dofs_per_block[4]
               << std::endl;
 
     // periodicity of grid faces
@@ -111,7 +117,7 @@ void TopographySolver<dim>::setup_dofs()
          nonzero_constraints);
 
         // zero function
-        const Functions::ZeroFunction<dim>  zero_function(dim+2);
+        const Functions::ZeroFunction<dim>  zero_function(2*dim+3);
 
         // constrain density at bottom
         const FEValuesExtractors::Scalar    density(0);
@@ -130,6 +136,15 @@ void TopographySolver<dim>::setup_dofs()
          zero_function,
          nonzero_constraints,
          fe_system.component_mask(velocity));
+
+        // constrain magnetic field at bottom
+        const FEValuesExtractors::Vector magnetic_field(dim+2);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         nonzero_constraints,
+         fe_system.component_mask(magnetic_field));
 
         nonzero_constraints.close();
     }
@@ -156,7 +171,7 @@ void TopographySolver<dim>::setup_dofs()
          zero_constraints);
 
         // zero function
-        const Functions::ZeroFunction<dim>  zero_function(dim+2);
+        const Functions::ZeroFunction<dim>  zero_function(2*dim+3);
 
         // constrain density at bottom
         const FEValuesExtractors::Scalar    density(0);
@@ -175,6 +190,15 @@ void TopographySolver<dim>::setup_dofs()
          zero_function,
          zero_constraints,
          fe_system.component_mask(velocity));
+
+        // constrain magnetic field at bottom
+        const FEValuesExtractors::Vector magnetic_field(dim+2);
+        VectorTools::interpolate_boundary_values
+        (dof_handler,
+         DomainIdentifiers::Bottom,
+         zero_function,
+         nonzero_constraints,
+         fe_system.component_mask(magnetic_field));
 
         zero_constraints.close();
     }
@@ -195,7 +219,7 @@ void TopographySolver<dim>::setup_system_matrix
     system_matrix.clear();
 
     Table<2,DoFTools::Coupling> coupling;
-    coupling.reinit(dim+2, dim+2);
+    coupling.reinit(2*dim+3, 2*dim+3);
 
     // density-density coupling
     coupling[0][0] = DoFTools::always;
@@ -217,6 +241,23 @@ void TopographySolver<dim>::setup_system_matrix
             else
                 coupling[c+1][d+1] = DoFTools::none;
 
+
+    // momentum-magnetic coupling
+    for (unsigned int c=0; c<dim; ++c)
+        for (unsigned int d=0; d<dim; ++d)
+        {
+            coupling[c+1][d+dim+2] = DoFTools::always;
+            coupling[c+dim+2][d+1] = DoFTools::always;
+        }
+
+    // magnetic-magnetic coupling
+    for (unsigned int c=0; c<dim+1; ++c)
+        for (unsigned int d=0; d<dim+1; ++d)
+            if (c<dim || d<dim)
+                coupling[c+dim+2][d+dim+2] = DoFTools::always;
+            else if ((c==dim && d<dim) || (c<dim && d==dim))
+                coupling[c+dim+2][d+dim+2] = DoFTools::always;
+
     BlockDynamicSparsityPattern dsp(dofs_per_block,
                                     dofs_per_block);
 
@@ -233,10 +274,7 @@ void TopographySolver<dim>::setup_system_matrix
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::setup_dofs();
 template void TopographyProblem::TopographySolver<3>::setup_dofs();
 
-template void TopographyProblem::TopographySolver<2>::setup_system_matrix
-(const std::vector<types::global_dof_index> &);
 template void TopographyProblem::TopographySolver<3>::setup_system_matrix
 (const std::vector<types::global_dof_index> &);
