@@ -24,20 +24,35 @@ fe_values(finite_element,
 fe_face_values(finite_element,
                face_quadrature,
                face_update_flags),
+// density part
 phi_density(finite_element.dofs_per_cell),
 grad_phi_density(finite_element.dofs_per_cell),
 present_density_values(quadrature.size()),
-present_face_density_values(face_quadrature.size()),
 present_density_gradients(quadrature.size()),
+present_face_density_values(face_quadrature.size()),
+// momentum part
 div_phi_velocity(finite_element.dofs_per_cell),
 phi_velocity(finite_element.dofs_per_cell),
 grad_phi_velocity(finite_element.dofs_per_cell),
 phi_pressure(finite_element.dofs_per_cell),
 present_velocity_divergences(quadrature.size()),
-present_pressure_values(quadrature.size()),
 present_velocity_values(quadrature.size()),
+present_velocity_gradients(quadrature.size()),
+present_pressure_values(quadrature.size()),
 present_face_velocity_values(face_quadrature.size()),
-present_velocity_gradients(quadrature.size())
+// magnetic part
+div_phi_field(finite_element.dofs_per_cell),
+phi_field(finite_element.dofs_per_cell),
+curl_phi_field(finite_element.dofs_per_cell),
+grad_phi_field(finite_element.dofs_per_cell),
+phi_scalar(finite_element.dofs_per_cell),
+present_field_divergences(quadrature.size()),
+present_field_values(quadrature.size()),
+present_field_curls(quadrature.size()),
+present_field_gradients(quadrature.size()),
+present_scalar_values(quadrature.size()),
+present_face_field_curls(face_quadrature.size()),
+present_face_scalar_values(face_quadrature.size())
 {}
 
 
@@ -52,20 +67,36 @@ fe_face_values(scratch.fe_face_values.get_mapping(),
                scratch.fe_face_values.get_fe(),
                scratch.fe_face_values.get_quadrature(),
                scratch.fe_face_values.get_update_flags()),
+// density part
 phi_density(scratch.phi_density),
 grad_phi_density(scratch.grad_phi_density),
 present_density_values(scratch.present_density_values),
 present_face_density_values(scratch.present_face_density_values),
 present_density_gradients(scratch.present_density_gradients),
+// momentum part
 div_phi_velocity(scratch.div_phi_velocity),
 phi_velocity(scratch.phi_velocity),
 grad_phi_velocity(scratch.grad_phi_velocity),
 phi_pressure(scratch.phi_pressure),
 present_velocity_divergences(scratch.present_velocity_divergences),
-present_pressure_values(scratch.present_pressure_values),
 present_velocity_values(scratch.present_velocity_values),
+present_velocity_gradients(scratch.present_velocity_gradients),
+present_pressure_values(scratch.present_pressure_values),
 present_face_velocity_values(scratch.present_face_velocity_values),
-present_velocity_gradients(scratch.present_velocity_gradients)
+// magnetic part
+div_phi_field(scratch.div_phi_field),
+phi_field(scratch.phi_field),
+curl_phi_field(scratch.curl_phi_field),
+grad_phi_field(scratch.grad_phi_field),
+phi_scalar(scratch.phi_scalar),
+present_field_divergences(scratch.present_field_divergences),
+present_field_values(scratch.present_field_values),
+present_field_curls(scratch.present_field_curls),
+present_field_gradients(scratch.present_field_gradients),
+present_scalar_values(scratch.present_scalar_values),
+present_face_field_curls(scratch.present_face_field_curls),
+present_face_scalar_values(scratch.present_face_scalar_values)
+
 {}
 
 template<int dim>

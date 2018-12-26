@@ -85,6 +85,7 @@ private:
     const Tensor<2,dim>         background_velocity_gradient;
 
     const Tensor<1,dim>         background_field_value;
+    const Tensor<1,dim>         background_field_curl;
     const Tensor<2,dim>         background_field_gradient;
 
     Triangulation<dim>          triangulation;
