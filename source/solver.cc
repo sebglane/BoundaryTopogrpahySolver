@@ -23,26 +23,32 @@
 
 namespace TopographyProblem {
 
-template<int dim>
-TopographySolver<dim>::TopographySolver(Parameters &parameters_)
+template<>
+TopographySolver<3>::TopographySolver(Parameters &parameters_)
 :
 parameters(parameters_),
 // coefficients
 equation_coefficients{parameters.S,
-                      1. / parameters.Rossby,
-                      1. / (parameters.Froude * parameters.Froude)},
+                      1./parameters.Rossby,
+                      1. / parameters.Froude / parameters.Froude,
+                      parameters.Alfven * parameters.Alfven,
+                      parameters.magReynolds},
 // model parameters
-rotation_vector(Point<dim>::unit_vector(dim-1)),
-gravity_vector(-Point<dim>::unit_vector(dim-1)),
-background_velocity_value(Point<dim>::unit_vector(0)),
-background_density_gradient(-Point<dim>::unit_vector(dim-1)),
+rotation_vector(Point<3>::unit_vector(3-1)),
+gravity_vector(-Point<3>::unit_vector(3-1)),
+background_density_gradient(-Point<3>::unit_vector(3-1)),
+background_velocity_value(Point<3>::unit_vector(0)),
 background_velocity_gradient(),
+background_field_value(Point<3>::unit_vector(0)),
+background_field_gradient(),
 // triangulation
 triangulation(),
 // finite element part
-fe_system(FE_Q<dim>(parameters.density_degree), 1,
-          FESystem<dim>(FE_Q<dim>(parameters.velocity_degree), dim), 1,
-          FE_Q<dim>(parameters.velocity_degree - 1), 1),
+fe_system(FE_Q<3>(parameters.density_degree), 1,
+          FESystem<3>(FE_Q<3>(parameters.velocity_degree), 3), 1,
+          FE_Q<3>(parameters.velocity_degree - 1), 1,
+          FESystem<3>(FE_Q<3>(parameters.magnetic_degree), 3), 1,
+          FE_Q<3>(parameters.magnetic_degree), 1),
 dof_handler(triangulation),
 // monitor
 computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
@@ -84,14 +90,6 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
 
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;
-
-   const double omega = 2. * numbers::PI * parameters.Froude;
-   const double N = std::sqrt(parameters.S);
-
-   if (omega > N)
-       std::cout << "omega^2 > N^2" << std::endl;
-   else if (omega < N)
-       std::cout << "omega^2 < N^2" << std::endl;
 }
 
 template<int dim>
@@ -247,5 +245,4 @@ void TopographySolver<dim>::run()
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template class TopographyProblem::TopographySolver<2>;
 template class TopographyProblem::TopographySolver<3>;
