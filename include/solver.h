@@ -48,7 +48,6 @@ private:
 
     void setup_system_matrix(const std::vector<types::global_dof_index> &dofs_per_block);
 
-    void assemble(const bool initial_step, const bool assemle_matrix);
     void assemble_system(const bool initial_step);
     void assemble_rhs(const bool initial_step);
 

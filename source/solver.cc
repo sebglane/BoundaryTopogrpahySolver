@@ -40,6 +40,7 @@ background_density_gradient(-Point<3>::unit_vector(3-1)),
 background_velocity_value(Point<3>::unit_vector(0)),
 background_velocity_gradient(),
 background_field_value(Point<3>::unit_vector(0)),
+background_field_curl(),
 background_field_gradient(),
 // triangulation
 triangulation(),
@@ -58,23 +59,26 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
               << "The governing equations are\n\n"
               << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
               << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
-              << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + 2 / Ro  Omega x v\n"
-              << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
-              << "The stratification parameter, S, the Rossby number, Ro, and the Froude number, Fr, are given by:\n\n";
+              << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + (2 / Ro)  Omega x v\n"
+              << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g + \n"
+              << "\t\t\t\t  + Al^2 (B . grad(b) + b. grad(B) + b . grad(b)),\n\n"
+              << "\t-- Induction equation:\n\t\t div(grad(b)) + Rm (curl(v x B) + curl(V x b) + curl(v x b)) = 0\n\n"
+              << "The stratification parameter, S, the Rossby number, Ro, the Froude number, Fr, the Alfven number, Al,\n"
+              << "and the magnetic Reynolds number, Rm, are given by:\n\n";
 
     // generate a nice table of the equation coefficients
-    std::cout << "+-----------+---------------+---------------+\n"
-              << "|    S      |      Ro       |      Fr       |\n"
-              << "+-----------+---------------+---------------+\n"
-              << "| N^2 l / g | V / (Omega l) | V / sqrt(g l) |\n"
-              << "+-----------+---------------+---------------+\n";
+    std::cout << "+-----------+---------------+---------------+---------------+---------------+\n"
+              << "|    S      |      Ro       |      Fr       |      Al       |      Rm       |\n"
+              << "+-----------+---------------+---------------+---------------+---------------+\n"
+              << "| N^2 l / g | V / (Omega l) | V / sqrt(g l) |     Va / v    |   v l / eta   |\n"
+              << "+-----------+---------------+---------------+---------------+---------------+\n";
 
    std::cout << std::endl << "You have chosen the following parameter set:";
 
    std::stringstream ss;
-   ss << "+----------+----------+----------+----------+----------+\n"
-      << "|    k     |    h     |    S     |    Ro    |    Fr    |\n"
-      << "+----------+----------+----------+----------+----------+\n"
+   ss << "+----------+----------+----------+----------+----------+----------+----------+\n"
+      << "|    k     |    h     |    S     |    Ro    |    Fr    |    Al    |    Rm    |\n"
+      << "+----------+----------+----------+----------+----------+----------+----------+\n"
       << "| "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wavelength
       << " | "
@@ -85,8 +89,12 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby
       << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
+      << " | "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Alfven
+      << " | "
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.magReynolds
       << " |\n"
-      << "+----------+----------+----------+----------+----------+\n";
+      << "+----------+----------+----------+----------+----------+----------+----------+\n";
 
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;
@@ -234,8 +242,8 @@ void TopographySolver<dim>::run()
         = compute_boundary_traction();
 
         std::cout << "   Average traction: " << average_boundary_traction << std::endl;
-
-        output_results(cycle);
+//
+//        output_results(cycle);
 
         if (cycle == 0)
             initial_step = false;
