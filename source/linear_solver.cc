@@ -22,8 +22,9 @@ void TopographySolver<dim>::solve(const bool initial_step)
     direct_solver.solve(system_matrix, system_rhs);
 
     newton_update = system_rhs;
-    const ConstraintMatrix &constraints_used = (initial_step ? nonzero_constraints
-                                                    : zero_constraints);
+    const ConstraintMatrix &constraints_used = (initial_step ?
+                                                nonzero_constraints:
+                                                zero_constraints);
     constraints_used.distribute(newton_update);
 }
 

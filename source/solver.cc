@@ -61,7 +61,7 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
               << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
               << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + (2 / Ro)  Omega x v\n"
               << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g + \n"
-              << "\t\t\t\t  + Al^2 (B . grad(b) + b. grad(B) + b . grad(b)),\n\n"
+              << "\t\t\t\t  + Al^2 (B . grad(b) + b . grad(B) + b . grad(b)),\n\n"
               << "\t-- Induction equation:\n\t\t div(grad(b)) + Rm (curl(v x B) + curl(V x b) + curl(v x b)) = 0\n\n"
               << "The stratification parameter, S, the Rossby number, Ro, the Froude number, Fr, the Alfven number, Al,\n"
               << "and the magnetic Reynolds number, Rm, are given by:\n\n";
@@ -157,7 +157,7 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     data_out.add_data_vector(cell_viscosity_velocity,
                              "cell_viscosity_velocity");
 
-    data_out.build_patches(std::min(parameters.density_degree, parameters.velocity_degree));
+    data_out.build_patches(std::min(std::min(parameters.density_degree, parameters.velocity_degree), parameters.magnetic_degree));
 
     // write output to disk
     const std::string filename = ("solution-" +
@@ -242,8 +242,8 @@ void TopographySolver<dim>::run()
         = compute_boundary_traction();
 
         std::cout << "   Average traction: " << average_boundary_traction << std::endl;
-//
-//        output_results(cycle);
+
+        output_results(cycle);
 
         if (cycle == 0)
             initial_step = false;
