@@ -35,6 +35,7 @@ public:
 
 private:
     const EquationData::BackgroundVelocity<dim>   background_velocity;
+    const EquationData::BackgroundMagneticField<dim>   background_field;
 };
 
 }  // namespace TopographyProblem
