@@ -47,6 +47,7 @@ void TopographySolver<dim>::assemble_system(const bool initial_step)
                                            update_gradients|
                                            update_JxW_values,
                                            update_values|
+                                           update_gradients|
                                            update_normal_vectors|
                                            update_JxW_values),
                     Assembly::CopyData<dim>(fe_system));
@@ -84,6 +85,7 @@ void TopographySolver<dim>::assemble_rhs(const bool initial_step)
                                            update_gradients|
                                            update_JxW_values,
                                            update_values|
+                                           update_gradients|
                                            update_normal_vectors|
                                            update_JxW_values),
                     Assembly::CopyData<dim>(fe_system));

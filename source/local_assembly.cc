@@ -98,6 +98,11 @@ void TopographySolver<3>::local_assemble(
             scratch.phi_velocity[k]     =   scratch.fe_values[velocity].value(k, q);
             scratch.grad_phi_velocity[k]=   scratch.fe_values[velocity].gradient(k, q);
             scratch.phi_pressure[k]     =   scratch.fe_values[pressure].value(k, q);
+            // magnetic part
+            scratch.div_phi_field[k]    =   scratch.fe_values[field].divergence(k, q);
+            scratch.phi_field[k]        =   scratch.fe_values[field].value(k, q);
+            scratch.curl_phi_field[k]   =   scratch.fe_values[field].curl(k, q);
+            scratch.phi_scalar[k]       =   scratch.fe_values[scalar].value(k, q);
         }
 
         for (unsigned int i=0; i<dofs_per_cell; ++i)
@@ -187,15 +192,24 @@ void TopographySolver<3>::local_assemble(
                 scratch.fe_face_values[velocity].get_function_values(
                         evaluation_point,
                         scratch.present_face_velocity_values);
+                scratch.fe_face_values[field].get_function_curls(
+                        evaluation_point,
+                        scratch.present_face_field_curls);
+                scratch.fe_face_values[scalar].get_function_values(
+                        evaluation_point,
+                        scratch.present_face_scalar_values);
 
                 for (unsigned int q=0; q<n_face_q_points; ++q)
                 {
                     for (unsigned int k=0; k<dofs_per_cell; ++k)
                     {
                         // density part
-                        scratch.phi_density[k]  =   scratch.fe_face_values[density].value(k, q);
+                        scratch.phi_density[k]      =   scratch.fe_face_values[density].value(k, q);
                         // momentum part
-                        scratch.phi_velocity[k] =   scratch.fe_face_values[velocity].value(k, q);
+                        scratch.phi_velocity[k]     =   scratch.fe_face_values[velocity].value(k, q);
+                        // magnetic part
+                        scratch.curl_phi_field[k]   =   scratch.fe_face_values[field].curl(k, q);
+                        scratch.phi_scalar[k]       =   scratch.fe_face_values[scalar].value(k, q);
                     }
                     for (unsigned int i=0; i<dofs_per_cell; ++i)
                     {
@@ -203,6 +217,13 @@ void TopographySolver<3>::local_assemble(
                                 // continuity equation
                                 - scratch.present_face_density_values[q] * normal_vectors[q] * background_velocity_value * scratch.phi_density[i]
                                 - scratch.present_face_density_values[q] * normal_vectors[q] * scratch.present_face_velocity_values[q] * scratch.phi_density[i]
+                                // momentum equation
+                                + equation_coefficients[3] * (
+                                          (normal_vectors[q] * background_field_value) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[i])
+                                        + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (background_field_value * scratch.phi_velocity[i])
+                                        + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[i]))
+                                // induction equation
+                                + scratch.present_face_scalar_values[q] * normal_vectors[q] * scratch.curl_phi_field[i]
                                 ) * scratch.fe_face_values.JxW(q);
                         if (assemble_matrix)
                             for (unsigned int j=0; j<dofs_per_cell; ++j)
@@ -211,6 +232,14 @@ void TopographySolver<3>::local_assemble(
                                           scratch.phi_density[j] * normal_vectors[q] * background_velocity_value * scratch.phi_density[i]
                                         + scratch.phi_density[j] * normal_vectors[q] * scratch.present_face_velocity_values[q] * scratch.phi_density[i]
                                         + scratch.present_face_density_values[q] * normal_vectors[q] * scratch.phi_velocity[j] * scratch.phi_density[i]
+                                        // momentum equation
+                                        - equation_coefficients[3] * (
+                                                  (normal_vectors[q] * background_field_value) * (scratch.curl_phi_field[j] * scratch.phi_velocity[i])
+                                                + (normal_vectors[q] * scratch.curl_phi_field[j]) * (background_field_value * scratch.phi_velocity[i])
+                                                + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (scratch.curl_phi_field[j] * scratch.phi_velocity[i])
+                                                + (normal_vectors[q] * scratch.curl_phi_field[j]) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[i]))
+                                        // induction equation
+                                        - scratch.phi_scalar[j] * normal_vectors[q] * scratch.curl_phi_field[i]
                                         ) * scratch.fe_face_values.JxW(q);
                     }
                 }
