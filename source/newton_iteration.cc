@@ -76,10 +76,6 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
 
 // explicit instantiation
 template void TopographyProblem::
-TopographySolver<2>::newton_iteration(const double,
-                                      const unsigned int,
-                                      const bool);
-template void TopographyProblem::
 TopographySolver<3>::newton_iteration(const double,
                                       const unsigned int,
                                       const bool);

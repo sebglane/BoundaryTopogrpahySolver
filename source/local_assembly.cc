@@ -10,13 +10,15 @@
 
 namespace TopographyProblem {
 
-template<int dim>
-void TopographySolver<dim>::local_assemble(
-        const typename DoFHandler<dim>::active_cell_iterator   &cell,
-        Assembly::Scratch<dim>                                 &scratch,
-        Assembly::CopyData<dim>                                &data,
+template<>
+void TopographySolver<3>::local_assemble(
+        const typename DoFHandler<3>::active_cell_iterator   &cell,
+        Assembly::Scratch<3>                                 &scratch,
+        Assembly::CopyData<3>                                &data,
         const bool                                              assemble_matrix)
 {
+    const unsigned int dim = 3;
+
     const unsigned int dofs_per_cell = scratch.fe_values.get_fe().dofs_per_cell;
     const unsigned int n_q_points = scratch.fe_values.n_quadrature_points;
     const unsigned int n_face_q_points = scratch.fe_face_values.n_quadrature_points;
@@ -24,6 +26,8 @@ void TopographySolver<dim>::local_assemble(
     const FEValuesExtractors::Scalar    density(0);
     const FEValuesExtractors::Vector    velocity(1);
     const FEValuesExtractors::Scalar    pressure(dim+1);
+    const FEValuesExtractors::Vector    field(dim+2);
+    const FEValuesExtractors::Scalar    scalar(2*dim+2);
 
     scratch.fe_values.reinit(cell);
 
@@ -46,15 +50,32 @@ void TopographySolver<dim>::local_assemble(
     scratch.fe_values[velocity].get_function_divergences(
             evaluation_point,
             scratch.present_velocity_divergences);
-    scratch.fe_values[pressure].get_function_values(
-            evaluation_point,
-            scratch.present_pressure_values);
     scratch.fe_values[velocity].get_function_values(
             evaluation_point,
             scratch.present_velocity_values);
     scratch.fe_values[velocity].get_function_gradients(
             evaluation_point,
             scratch.present_velocity_gradients);
+    scratch.fe_values[pressure].get_function_values(
+            evaluation_point,
+            scratch.present_pressure_values);
+    // induction equation
+    scratch.fe_values[field].get_function_divergences(
+                evaluation_point,
+                scratch.present_field_divergences);
+    scratch.fe_values[field].get_function_values(
+            evaluation_point,
+            scratch.present_field_values);
+    scratch.fe_values[field].get_function_gradients(
+            evaluation_point,
+            scratch.present_field_gradients);
+    scratch.fe_values[field].get_function_curls(
+            evaluation_point,
+            scratch.present_field_curls);
+    scratch.fe_values[scalar].get_function_values(
+            evaluation_point,
+            scratch.present_scalar_values);
+
     // viscosity density equation
     const double nu_density = compute_density_viscosity(
             scratch.present_velocity_values,
@@ -94,11 +115,22 @@ void TopographySolver<dim>::local_assemble(
                     - (scratch.present_velocity_gradients[q] * background_velocity_value) * scratch.phi_velocity[i]
                     - (background_velocity_gradient * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
                     - (scratch.present_velocity_gradients[q] * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
-                    - (dim == 3?
-                       equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
-                       : 0.)
+                    - equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
                     + scratch.present_pressure_values[q] * scratch.div_phi_velocity[i]
                     + equation_coefficients[2] * scratch.present_density_values[q] * gravity_vector * scratch.phi_velocity[i]
+                    - equation_coefficients[3] * (
+                             (scratch.grad_phi_velocity[i] * background_field_value) * scratch.present_field_curls[q]
+                           + (scratch.grad_phi_velocity[i] * scratch.present_field_curls[q]) * background_field_value
+                           + (scratch.grad_phi_velocity[i] * scratch.present_field_curls[q]) * scratch.present_field_curls[q])
+                   // induction equation
+                   + scratch.present_field_curls[q] * scratch.curl_phi_field[i]
+                   - equation_coefficients[4] * (
+                             cross_product_3d(background_velocity_value, scratch.present_field_curls[q]) * scratch.phi_field[i]
+                           + cross_product_3d(scratch.present_velocity_values[q], background_field_curl) * scratch.phi_field[i]
+                           + cross_product_3d(scratch.present_velocity_values[q], scratch.present_field_curls[q]) * scratch.phi_field[i])
+                   + scratch.present_scalar_values[q] * scratch.div_phi_field[i]
+                   // solenoidal constraint
+                   + scratch.present_field_divergences[q] * scratch.phi_scalar[i]
                     ) * scratch.fe_values.JxW(q);
 
             if (assemble_matrix)
@@ -118,11 +150,25 @@ void TopographySolver<dim>::local_assemble(
                             + (background_velocity_gradient * scratch.phi_velocity[j]) * scratch.phi_velocity[i]
                             + (scratch.grad_phi_velocity[j] * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
                             + (scratch.present_velocity_gradients[q] * scratch.phi_velocity[j]) * scratch.phi_velocity[i]
-                            + (dim == 3?
-                               equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.phi_velocity[j]) * scratch.phi_velocity[i]
-                               : 0.)
+                            + equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.phi_velocity[j]) * scratch.phi_velocity[i]
                             - scratch.phi_pressure[j] * scratch.div_phi_velocity[i]
                             - equation_coefficients[2] * scratch.phi_density[j] * gravity_vector * scratch.phi_velocity[i]
+                            + equation_coefficients[3] * (
+                                      (scratch.grad_phi_velocity[i] * background_field_value) * scratch.curl_phi_field[j]
+                                    + (scratch.grad_phi_velocity[i] * scratch.curl_phi_field[j]) * background_field_value
+                                    + (scratch.grad_phi_velocity[i] * scratch.present_field_curls[q]) * scratch.curl_phi_field[j]
+                                    + (scratch.grad_phi_velocity[i] * scratch.curl_phi_field[j]) * scratch.present_field_curls[q])
+                            // induction equation
+                            - scratch.curl_phi_field[j] * scratch.curl_phi_field[i]
+                            + equation_coefficients[4] * (
+                                      cross_product_3d(background_velocity_value, scratch.curl_phi_field[j]) * scratch.phi_field[i]
+                                    + cross_product_3d(scratch.phi_velocity[j], background_field_curl) * scratch.phi_field[i]
+                                    + cross_product_3d(scratch.present_velocity_values[q], scratch.curl_phi_field[j]) * scratch.phi_field[i]
+                                    + cross_product_3d(scratch.phi_velocity[j], scratch.present_field_curls[q]) * scratch.phi_field[i]
+                                    )
+                            + scratch.phi_scalar[j] * scratch.div_phi_field[i]
+                            // solenoidal constraint
+                            + scratch.div_phi_field[j] * scratch.phi_scalar[i]
                            ) * scratch.fe_values.JxW(q);
         }
     }
@@ -196,18 +242,11 @@ void TopographySolver<dim>::copy_local_to_global(
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::local_assemble(
-        const typename dealii::DoFHandler<2>::active_cell_iterator  &,
-        Assembly::Scratch<2>                                        &,
-        Assembly::CopyData<2>                                       &,
-        const bool                                                    );
 template void TopographyProblem::TopographySolver<3>::local_assemble(
         const typename dealii::DoFHandler<3>::active_cell_iterator  &,
         Assembly::Scratch<3>                                        &,
         Assembly::CopyData<3>                                       &,
         const bool                                                    );
 
-template void TopographyProblem::TopographySolver<2>::copy_local_to_global(
-        const Assembly::CopyData<2> &, const bool , const bool );
 template void TopographyProblem::TopographySolver<3>::copy_local_to_global(
         const Assembly::CopyData<3> &, const bool , const bool );
