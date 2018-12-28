@@ -13,7 +13,7 @@ namespace TopographyProblem {
 template<>
 void TopographySolver<3>::local_assemble_rhs(
         const typename DoFHandler<3>::active_cell_iterator &cell,
-        Assembly::Scratch<3>                               &scratch,
+        Assembly::RightHandSideScratch<3>                  &scratch,
         Assembly::CopyDataRightHandSide<3>                 &data,
         const bool                                          initial_step)
 {
@@ -262,7 +262,7 @@ void TopographySolver<dim>::copy_local_to_global_rhs(
 // explicit instantiation
 template void TopographyProblem::TopographySolver<3>::local_assemble_rhs(
         const typename dealii::DoFHandler<3>::active_cell_iterator  &,
-        Assembly::Scratch<3>                                        &,
+        Assembly::RightHandSideScratch<3>                           &,
         Assembly::CopyDataRightHandSide<3>                          &,
         const bool                                                    );
 
