@@ -28,26 +28,57 @@ void TopographySolver<dim>::assemble_system(const bool initial_step)
 
     WorkStream::run(dof_handler.begin_active(),
                     dof_handler.end(),
-                    std::bind(&TopographySolver<dim>::local_assemble_matrix,
+                    std::bind(&TopographySolver<dim>::local_assemble_nonlinear_matrix,
                               this,
                               std::placeholders::_1,
                               std::placeholders::_2,
                               std::placeholders::_3),
-                    std::bind(&TopographySolver<dim>::copy_local_to_global_matrix,
+                    std::bind(&TopographySolver<dim>::copy_local_to_global_nonlinear_matrix,
                               this,
                               std::placeholders::_1,
                               initial_step),
-                    Assembly::Scratch<dim>(fe_system,
-                                           quadrature_formula,
-                                           face_quadrature,
-                                           update_values|
-                                           update_gradients|
-                                           update_JxW_values,
-                                           update_values|
-                                           update_gradients|
-                                           update_normal_vectors|
-                                           update_JxW_values),
+                    Assembly::NonLinearScratch<dim>(fe_system,
+                                                    quadrature_formula,
+                                                    face_quadrature,
+                                                    update_values|
+                                                    update_gradients|
+                                                    update_JxW_values,
+                                                    update_values|
+                                                    update_gradients|
+                                                    update_normal_vectors|
+                                                    update_JxW_values),
                     Assembly::CopyData<dim>(fe_system));
+
+    if (assemble_linear_matrix)
+    {
+        system_matrix_linear_part = 0;
+
+        WorkStream::run(dof_handler.begin_active(),
+                        dof_handler.end(),
+                        std::bind(&TopographySolver<dim>::local_assemble_linear_matrix,
+                                  this,
+                                  std::placeholders::_1,
+                                  std::placeholders::_2,
+                                  std::placeholders::_3),
+                        std::bind(&TopographySolver<dim>::copy_local_to_global_linear_matrix,
+                                  this,
+                                  std::placeholders::_1,
+                                  initial_step),
+                        Assembly::LinearScratch<dim>(fe_system,
+                                                     quadrature_formula,
+                                                     face_quadrature,
+                                                     update_values|
+                                                     update_gradients|
+                                                     update_JxW_values,
+                                                     update_values|
+                                                     update_gradients|
+                                                     update_normal_vectors|
+                                                     update_JxW_values),
+                        Assembly::CopyData<dim>(fe_system));
+    }
+
+    system_matrix.add(1., system_matrix_linear_part);
+
 }
 
 template<int dim>
@@ -72,16 +103,16 @@ void TopographySolver<dim>::assemble_rhs(const bool initial_step)
                               this,
                               std::placeholders::_1,
                               initial_step),
-                    Assembly::Scratch<dim>(fe_system,
-                                           quadrature_formula,
-                                           face_quadrature,
-                                           update_values|
-                                           update_gradients|
-                                           update_JxW_values,
-                                           update_values|
-                                           update_gradients|
-                                           update_normal_vectors|
-                                           update_JxW_values),
+                    Assembly::RightHandSideScratch<dim>(fe_system,
+                                                        quadrature_formula,
+                                                        face_quadrature,
+                                                        update_values|
+                                                        update_gradients|
+                                                        update_JxW_values,
+                                                        update_values|
+                                                        update_gradients|
+                                                        update_normal_vectors|
+                                                        update_JxW_values),
                     Assembly::CopyDataRightHandSide<dim>(fe_system));
 }
 

@@ -110,7 +110,7 @@ struct RightHandSideScratch
                          const UpdateFlags           update_flags,
                          const UpdateFlags           face_update_flags);
 
-    RightHandSideScratch(const NonLinearScratch<dim>    &scratch);
+    RightHandSideScratch(const RightHandSideScratch<dim>    &scratch);
 
     FEValues<dim>               fe_values;
     FEFaceValues<dim>           fe_face_values;
@@ -157,7 +157,6 @@ struct CopyData
     CopyData(const CopyData<dim>        &data);
 
     FullMatrix<double>                      local_matrix;
-    Vector<double>                          local_rhs;
 
     std::vector<types::global_dof_index>    local_dof_indices;
 };

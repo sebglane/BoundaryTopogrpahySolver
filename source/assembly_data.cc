@@ -167,6 +167,7 @@ present_velocity_gradients(quadrature.size()),
 present_pressure_values(quadrature.size()),
 present_face_velocity_values(face_quadrature.size()),
 // magnetic part
+div_phi_field(finite_element.dofs_per_cell),
 phi_field(finite_element.dofs_per_cell),
 curl_phi_field(finite_element.dofs_per_cell),
 phi_scalar(finite_element.dofs_per_cell),
@@ -223,7 +224,6 @@ CopyData<dim>::CopyData(const FiniteElement<dim>    &finite_element)
 :
 local_matrix(finite_element.dofs_per_cell,
              finite_element.dofs_per_cell),
-local_rhs(finite_element.dofs_per_cell),
 local_dof_indices(finite_element.dofs_per_cell)
 {}
 
@@ -232,7 +232,6 @@ template<int dim>
 CopyData<dim>::CopyData(const CopyData<dim>   &data)
 :
 local_matrix(data.local_matrix),
-local_rhs(data.local_rhs),
 local_dof_indices(data.local_dof_indices)
 {}
 
@@ -256,14 +255,18 @@ local_dof_indices(data.local_dof_indices)
 
 }  // namespace Assembly
 
-
 // explicit instantiation
 template struct Assembly::NonLinearScratch<2>;
 template struct Assembly::NonLinearScratch<3>;
+
+template struct Assembly::LinearScratch<2>;
+template struct Assembly::LinearScratch<3>;
+
+template struct Assembly::RightHandSideScratch<2>;
+template struct Assembly::RightHandSideScratch<3>;
 
 template struct Assembly::CopyData<2>;
 template struct Assembly::CopyData<3>;
 
 template struct Assembly::CopyDataRightHandSide<2>;
 template struct Assembly::CopyDataRightHandSide<3>;
-

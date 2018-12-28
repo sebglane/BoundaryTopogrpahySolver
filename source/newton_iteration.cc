@@ -25,6 +25,8 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
     {
         if (first_step)
         {
+            // set flag
+            assemble_linear_matrix = true;
             // solve problem
             evaluation_point = present_solution;
             assemble_system(first_step);
@@ -32,7 +34,9 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             solve(first_step);
             present_solution = newton_update;
             nonzero_constraints.distribute(present_solution);
+            // unset flags
             first_step = false;
+            assemble_linear_matrix = false;
             // compute residual
             evaluation_point = present_solution;
             assemble_rhs(first_step);

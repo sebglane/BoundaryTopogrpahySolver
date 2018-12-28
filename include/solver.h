@@ -100,6 +100,7 @@ private:
     // system matrix
     BlockSparsityPattern        sparsity_pattern;
     BlockSparseMatrix<double>   system_matrix;
+    BlockSparseMatrix<double>   system_matrix_linear_part;
 
     // vectors
     BlockVector<double>         evaluation_point;
@@ -111,25 +112,36 @@ private:
     TimerOutput                 computing_timer;
 
 private:
-    void local_assemble_matrix(
+    // assembly flag
+    bool assemble_linear_matrix;
+
+    void local_assemble_nonlinear_matrix(
             const typename DoFHandler<dim>::active_cell_iterator   &cell,
-            Assembly::Scratch<dim>                                 &scratch,
+            Assembly::NonLinearScratch<dim>                                 &scratch,
+            Assembly::CopyData<dim>                                &data);
+
+    void local_assemble_linear_matrix(
+            const typename DoFHandler<dim>::active_cell_iterator   &cell,
+            Assembly::LinearScratch<dim>                           &scratch,
             Assembly::CopyData<dim>                                &data);
 
     void local_assemble_rhs(
             const typename DoFHandler<dim>::active_cell_iterator   &cell,
-            Assembly::Scratch<dim>                                 &scratch,
+            Assembly::RightHandSideScratch<dim>                    &scratch,
             Assembly::CopyDataRightHandSide<dim>                   &data,
             const bool                                              initial_step);
 
-    void copy_local_to_global_matrix(
+    void copy_local_to_global_nonlinear_matrix(
+            const Assembly::CopyData<dim>  &data,
+            const bool                      initial_step);
+
+    void copy_local_to_global_linear_matrix(
             const Assembly::CopyData<dim>  &data,
             const bool                      initial_step);
 
     void copy_local_to_global_rhs(
             const Assembly::CopyDataRightHandSide<dim> &data,
             const bool                                  initial_step);
-
 };
 
 }  // namespace BouyantFluid

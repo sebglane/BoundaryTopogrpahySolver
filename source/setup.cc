@@ -217,6 +217,7 @@ void TopographySolver<dim>::setup_system_matrix
 (const std::vector<types::global_dof_index> &dofs_per_block)
 {
     system_matrix.clear();
+    system_matrix_linear_part.clear();
 
     Table<2,DoFTools::Coupling> coupling;
     coupling.reinit(2*dim+3, 2*dim+3);
@@ -269,6 +270,7 @@ void TopographySolver<dim>::setup_system_matrix
     sparsity_pattern.copy_from(dsp);
 
     system_matrix.reinit(sparsity_pattern);
+    system_matrix_linear_part.reinit(sparsity_pattern);
 }
 
 }  // namespace TopographyProblem
