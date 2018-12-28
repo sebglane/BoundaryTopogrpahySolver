@@ -68,9 +68,7 @@ struct Scratch
     std::vector<double>         phi_scalar;
 
     std::vector<double>         present_field_divergences;
-    std::vector<Tensor<1,dim>>  present_field_values;
     std::vector<Tensor<1,dim>>  present_field_curls;
-    std::vector<Tensor<2,dim>>  present_field_gradients;
     std::vector<double>         present_scalar_values;
 
     std::vector<Tensor<1,dim>>  present_face_field_curls;

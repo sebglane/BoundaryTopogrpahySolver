@@ -63,12 +63,6 @@ void TopographySolver<3>::local_assemble(
     scratch.fe_values[field].get_function_divergences(
                 evaluation_point,
                 scratch.present_field_divergences);
-    scratch.fe_values[field].get_function_values(
-            evaluation_point,
-            scratch.present_field_values);
-    scratch.fe_values[field].get_function_gradients(
-            evaluation_point,
-            scratch.present_field_gradients);
     scratch.fe_values[field].get_function_curls(
             evaluation_point,
             scratch.present_field_curls);
@@ -245,7 +239,6 @@ void TopographySolver<3>::local_assemble(
                 }
             }
 }
-
 
 template<int dim>
 void TopographySolver<dim>::copy_local_to_global(
