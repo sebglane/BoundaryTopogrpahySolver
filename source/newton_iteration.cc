@@ -18,6 +18,9 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
     double last_res     = 1.0;
     bool   first_step   = is_initial_step;
 
+    // set flag
+    assemble_linear_matrix = true;
+
     unsigned int iteration = 0;
 
     while ((first_step || (current_res > tolerance)) &&
@@ -25,8 +28,6 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
     {
         if (first_step)
         {
-            // set flag
-            assemble_linear_matrix = true;
             // solve problem
             evaluation_point = present_solution;
             assemble_system(first_step);
@@ -49,6 +50,8 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             assemble_system(first_step);
             assemble_rhs(first_step);
             solve(first_step);
+            // unset flags
+            assemble_linear_matrix = false;
             // line search
             std::cout << "   Line search: " << std::endl;
             for (double alpha = 1.0; alpha > 1e-4; alpha *= 0.5)

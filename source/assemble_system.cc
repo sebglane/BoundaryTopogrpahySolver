@@ -84,7 +84,7 @@ void TopographySolver<dim>::assemble_system(const bool initial_step)
 template<int dim>
 void TopographySolver<dim>::assemble_rhs(const bool initial_step)
 {
-    TimerOutput::Scope timer_section(computing_timer, "assembly");
+    TimerOutput::Scope timer_section(computing_timer, "assembly rhs");
 
     const QGauss<dim>   quadrature_formula(parameters.velocity_degree + 1);
     const QGauss<dim-1> face_quadrature(parameters.velocity_degree + 1);
