@@ -1,7 +1,7 @@
 /*
- * local_assembly.cc
+ * local_rhs_assembly.cc
  *
- *  Created on: Dec 24, 2018
+ *  Created on: Dec 28, 2018
  *      Author: sg
  */
 
@@ -11,13 +11,17 @@
 namespace TopographyProblem {
 
 template<>
-void TopographySolver<3>::local_assemble(
-        const typename DoFHandler<3>::active_cell_iterator   &cell,
-        Assembly::Scratch<3>                                 &scratch,
-        Assembly::CopyData<3>                                &data,
-        const bool                                              assemble_matrix)
+void TopographySolver<3>::local_assemble_rhs(
+        const typename DoFHandler<3>::active_cell_iterator &cell,
+        Assembly::Scratch<3>                               &scratch,
+        Assembly::CopyDataRightHandSide<3>                 &data,
+        const bool                                          initial_step)
 {
     const unsigned int dim = 3;
+
+    const ConstraintMatrix &constraints_used = (initial_step ?
+                                                nonzero_constraints
+                                                : zero_constraints);
 
     const unsigned int dofs_per_cell = scratch.fe_values.get_fe().dofs_per_cell;
     const unsigned int n_q_points = scratch.fe_values.n_quadrature_points;
@@ -34,8 +38,7 @@ void TopographySolver<3>::local_assemble(
     cell->get_dof_indices(data.local_dof_indices);
 
     // reset local object
-    if (assemble_matrix)
-        data.local_matrix = 0;
+    data.matrix_for_bc = 0;
     data.local_rhs = 0;
 
     // compute present values for nonlinearity
@@ -132,43 +135,43 @@ void TopographySolver<3>::local_assemble(
                    + scratch.present_field_divergences[q] * scratch.phi_scalar[i]
                     ) * scratch.fe_values.JxW(q);
 
-            if (assemble_matrix)
-                for (unsigned int j=0; j<dofs_per_cell; ++j)
-                    data.local_matrix(i, j) += (
-                            // continuity equation
-                              nu_density * scratch.grad_phi_density[j] * scratch.grad_phi_density[i]
-                            - scratch.phi_density[j] * background_velocity_value * scratch.grad_phi_density[i]
-                            - scratch.phi_density[j] * scratch.present_velocity_values[q] * scratch.grad_phi_density[i]
-                            - scratch.present_density_values[q] * scratch.phi_velocity[j] * scratch.grad_phi_density[i]
-                            + equation_coefficients[0] * scratch.phi_velocity[j] * background_density_gradient * scratch.phi_density[i]
-                            // incompressibility equation
-                            - scratch.div_phi_velocity[j] * scratch.phi_pressure[i]
-                            // momentum equation
-                            + nu_velocity * scalar_product(scratch.grad_phi_velocity[j], scratch.grad_phi_velocity[i])
-                            + (scratch.grad_phi_velocity[j] * background_velocity_value) * scratch.phi_velocity[i]
-                            + (background_velocity_gradient * scratch.phi_velocity[j]) * scratch.phi_velocity[i]
-                            + (scratch.grad_phi_velocity[j] * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
-                            + (scratch.present_velocity_gradients[q] * scratch.phi_velocity[j]) * scratch.phi_velocity[i]
-                            + equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.phi_velocity[j]) * scratch.phi_velocity[i]
-                            - scratch.phi_pressure[j] * scratch.div_phi_velocity[i]
-                            - equation_coefficients[2] * scratch.phi_density[j] * gravity_vector * scratch.phi_velocity[i]
-                            + equation_coefficients[3] * (
-                                      (scratch.grad_phi_velocity[i] * background_field_value) * scratch.curl_phi_field[j]
-                                    + (scratch.grad_phi_velocity[i] * scratch.curl_phi_field[j]) * background_field_value
-                                    + (scratch.grad_phi_velocity[i] * scratch.present_field_curls[q]) * scratch.curl_phi_field[j]
-                                    + (scratch.grad_phi_velocity[i] * scratch.curl_phi_field[j]) * scratch.present_field_curls[q])
-                            // induction equation
-                            - scratch.curl_phi_field[j] * scratch.curl_phi_field[i]
-                            + equation_coefficients[4] * (
-                                      cross_product_3d(background_velocity_value, scratch.curl_phi_field[j]) * scratch.phi_field[i]
-                                    + cross_product_3d(scratch.phi_velocity[j], background_field_curl) * scratch.phi_field[i]
-                                    + cross_product_3d(scratch.present_velocity_values[q], scratch.curl_phi_field[j]) * scratch.phi_field[i]
-                                    + cross_product_3d(scratch.phi_velocity[j], scratch.present_field_curls[q]) * scratch.phi_field[i]
-                                    )
-                            + scratch.phi_scalar[j] * scratch.div_phi_field[i]
-                            // solenoidal constraint
-                            + scratch.div_phi_field[j] * scratch.phi_scalar[i]
-                           ) * scratch.fe_values.JxW(q);
+                if (constraints_used.is_inhomogeneously_constrained(data.local_dof_indices[i]))
+                    for (unsigned int j=0; j<dofs_per_cell; ++j)
+                        data.matrix_for_bc(j, i) += (
+                                // continuity equation
+                                  nu_density * scratch.grad_phi_density[i] * scratch.grad_phi_density[j]
+                                - scratch.phi_density[i] * background_velocity_value * scratch.grad_phi_density[j]
+                                - scratch.phi_density[i] * scratch.present_velocity_values[q] * scratch.grad_phi_density[j]
+                                - scratch.present_density_values[q] * scratch.phi_velocity[i] * scratch.grad_phi_density[j]
+                                + equation_coefficients[0] * scratch.phi_velocity[i] * background_density_gradient * scratch.phi_density[j]
+                                // incompressibility equation
+                                - scratch.div_phi_velocity[i] * scratch.phi_pressure[j]
+                                // momentum equation
+                                + nu_velocity * scalar_product(scratch.grad_phi_velocity[i], scratch.grad_phi_velocity[j])
+                                + (scratch.grad_phi_velocity[i] * background_velocity_value) * scratch.phi_velocity[j]
+                                + (background_velocity_gradient * scratch.phi_velocity[i]) * scratch.phi_velocity[j]
+                                + (scratch.grad_phi_velocity[i] * scratch.present_velocity_values[q]) * scratch.phi_velocity[j]
+                                + (scratch.present_velocity_gradients[q] * scratch.phi_velocity[i]) * scratch.phi_velocity[j]
+                                + equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.phi_velocity[i]) * scratch.phi_velocity[j]
+                                - scratch.phi_pressure[i] * scratch.div_phi_velocity[j]
+                                - equation_coefficients[2] * scratch.phi_density[i] * gravity_vector * scratch.phi_velocity[j]
+                                + equation_coefficients[3] * (
+                                          (scratch.grad_phi_velocity[j] * background_field_value) * scratch.curl_phi_field[i]
+                                        + (scratch.grad_phi_velocity[j] * scratch.curl_phi_field[i]) * background_field_value
+                                        + (scratch.grad_phi_velocity[j] * scratch.present_field_curls[q]) * scratch.curl_phi_field[i]
+                                        + (scratch.grad_phi_velocity[j] * scratch.curl_phi_field[i]) * scratch.present_field_curls[q])
+                                // induction equation
+                                - scratch.curl_phi_field[i] * scratch.curl_phi_field[j]
+                                + equation_coefficients[4] * (
+                                          cross_product_3d(background_velocity_value, scratch.curl_phi_field[i]) * scratch.phi_field[j]
+                                        + cross_product_3d(scratch.phi_velocity[i], background_field_curl) * scratch.phi_field[j]
+                                        + cross_product_3d(scratch.present_velocity_values[q], scratch.curl_phi_field[i]) * scratch.phi_field[j]
+                                        + cross_product_3d(scratch.phi_velocity[i], scratch.present_field_curls[q]) * scratch.phi_field[j]
+                                        )
+                                + scratch.phi_scalar[i] * scratch.div_phi_field[j]
+                                // solenoidal constraint
+                                + scratch.div_phi_field[i] * scratch.phi_scalar[j]
+                               ) * scratch.fe_values.JxW(q);
         }
     }
     if (cell->at_boundary())
@@ -203,7 +206,6 @@ void TopographySolver<3>::local_assemble(
                         scratch.phi_velocity[k]     =   scratch.fe_face_values[velocity].value(k, q);
                         // magnetic part
                         scratch.curl_phi_field[k]   =   scratch.fe_face_values[field].curl(k, q);
-                        scratch.phi_scalar[k]       =   scratch.fe_face_values[scalar].value(k, q);
                     }
                     for (unsigned int i=0; i<dofs_per_cell; ++i)
                     {
@@ -219,21 +221,22 @@ void TopographySolver<3>::local_assemble(
                                 // induction equation
                                 + scratch.present_face_scalar_values[q] * normal_vectors[q] * scratch.curl_phi_field[i]
                                 ) * scratch.fe_face_values.JxW(q);
-                        if (assemble_matrix)
+
+                        if (constraints_used.is_inhomogeneously_constrained(data.local_dof_indices[i]))
                             for (unsigned int j=0; j<dofs_per_cell; ++j)
-                                data.local_matrix(i, j) += (
+                                data.matrix_for_bc(j, i) += (
                                         // continuity equation
-                                          scratch.phi_density[j] * normal_vectors[q] * background_velocity_value * scratch.phi_density[i]
-                                        + scratch.phi_density[j] * normal_vectors[q] * scratch.present_face_velocity_values[q] * scratch.phi_density[i]
-                                        + scratch.present_face_density_values[q] * normal_vectors[q] * scratch.phi_velocity[j] * scratch.phi_density[i]
+                                          scratch.phi_density[i] * normal_vectors[q] * background_velocity_value * scratch.phi_density[j]
+                                        + scratch.phi_density[i] * normal_vectors[q] * scratch.present_face_velocity_values[q] * scratch.phi_density[j]
+                                        + scratch.present_face_density_values[q] * normal_vectors[q] * scratch.phi_velocity[i] * scratch.phi_density[j]
                                         // momentum equation
                                         - equation_coefficients[3] * (
-                                                  (normal_vectors[q] * background_field_value) * (scratch.curl_phi_field[j] * scratch.phi_velocity[i])
-                                                + (normal_vectors[q] * scratch.curl_phi_field[j]) * (background_field_value * scratch.phi_velocity[i])
-                                                + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (scratch.curl_phi_field[j] * scratch.phi_velocity[i])
-                                                + (normal_vectors[q] * scratch.curl_phi_field[j]) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[i]))
+                                                  (normal_vectors[q] * background_field_value) * (scratch.curl_phi_field[i] * scratch.phi_velocity[j])
+                                                + (normal_vectors[q] * scratch.curl_phi_field[i]) * (background_field_value * scratch.phi_velocity[j])
+                                                + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (scratch.curl_phi_field[i] * scratch.phi_velocity[j])
+                                                + (normal_vectors[q] * scratch.curl_phi_field[i]) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[j]))
                                         // induction equation
-                                        - scratch.phi_scalar[j] * normal_vectors[q] * scratch.curl_phi_field[i]
+                                        - scratch.fe_face_values[scalar].value(i, q) * normal_vectors[q] * scratch.curl_phi_field[j]
                                         ) * scratch.fe_face_values.JxW(q);
                     }
                 }
@@ -241,34 +244,28 @@ void TopographySolver<3>::local_assemble(
 }
 
 template<int dim>
-void TopographySolver<dim>::copy_local_to_global(
-        const Assembly::CopyData<dim>  &data,
-        const bool                      initial_step,
-        const bool                      assemble_matrix)
+void TopographySolver<dim>::copy_local_to_global_rhs(
+        const Assembly::CopyDataRightHandSide<dim> &data,
+        const bool                                  initial_step)
 {
     const ConstraintMatrix &constraints_used = (initial_step ?
                                                 nonzero_constraints
                                                 : zero_constraints);
-    if (assemble_matrix)
-        constraints_used.distribute_local_to_global(data.local_matrix,
-                                                    data.local_rhs,
-                                                    data.local_dof_indices,
-                                                    system_matrix,
-                                                    system_rhs);
-    else
-        constraints_used.distribute_local_to_global(data.local_rhs,
-                                                    data.local_dof_indices,
-                                                    system_rhs);
-}
 
+    constraints_used.distribute_local_to_global(data.local_rhs,
+                                                data.local_dof_indices,
+                                                system_rhs,
+                                                data.matrix_for_bc);
+}
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<3>::local_assemble(
+template void TopographyProblem::TopographySolver<3>::local_assemble_rhs(
         const typename dealii::DoFHandler<3>::active_cell_iterator  &,
         Assembly::Scratch<3>                                        &,
-        Assembly::CopyData<3>                                       &,
+        Assembly::CopyDataRightHandSide<3>                          &,
         const bool                                                    );
 
-template void TopographyProblem::TopographySolver<3>::copy_local_to_global(
-        const Assembly::CopyData<3> &, const bool , const bool );
+template void TopographyProblem::TopographySolver<3>::copy_local_to_global_rhs(
+        const Assembly::CopyDataRightHandSide<3> &, const bool );
+

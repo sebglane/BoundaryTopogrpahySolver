@@ -9,8 +9,6 @@
 
 namespace Assembly {
 
-
-
 template<int dim>
 Scratch<dim>::Scratch(const FiniteElement<dim>  &finite_element,
                       const Quadrature<dim>     &quadrature,
@@ -92,7 +90,6 @@ present_field_curls(scratch.present_field_curls),
 present_scalar_values(scratch.present_scalar_values),
 present_face_field_curls(scratch.present_face_field_curls),
 present_face_scalar_values(scratch.present_face_scalar_values)
-
 {}
 
 template<int dim>
@@ -113,6 +110,24 @@ local_rhs(data.local_rhs),
 local_dof_indices(data.local_dof_indices)
 {}
 
+template<int dim>
+CopyDataRightHandSide<dim>::CopyDataRightHandSide(const FiniteElement<dim>    &finite_element)
+:
+matrix_for_bc(finite_element.dofs_per_cell,
+              finite_element.dofs_per_cell),
+local_rhs(finite_element.dofs_per_cell),
+local_dof_indices(finite_element.dofs_per_cell)
+{}
+
+
+template<int dim>
+CopyDataRightHandSide<dim>::CopyDataRightHandSide(const CopyDataRightHandSide<dim>   &data)
+:
+matrix_for_bc(data.matrix_for_bc),
+local_rhs(data.local_rhs),
+local_dof_indices(data.local_dof_indices)
+{}
+
 }  // namespace Assembly
 
 
@@ -122,3 +137,7 @@ template struct Assembly::Scratch<3>;
 
 template struct Assembly::CopyData<2>;
 template struct Assembly::CopyData<3>;
+
+template struct Assembly::CopyDataRightHandSide<2>;
+template struct Assembly::CopyDataRightHandSide<3>;
+

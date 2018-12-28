@@ -28,6 +28,7 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             // solve problem
             evaluation_point = present_solution;
             assemble_system(first_step);
+            assemble_rhs(first_step);
             solve(first_step);
             present_solution = newton_update;
             nonzero_constraints.distribute(present_solution);
@@ -42,6 +43,7 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             // solve problem
             evaluation_point = present_solution;
             assemble_system(first_step);
+            assemble_rhs(first_step);
             solve(first_step);
             // line search
             std::cout << "   Line search: " << std::endl;

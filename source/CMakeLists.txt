@@ -9,7 +9,8 @@ SET(TARGET_SRC
   equation_data.cc
   grid_factory.cc
   linear_solver.cc
-  local_assembly.cc
+  local_matrix_assembly.cc
+  local_rhs_assembly.cc
   make_grid.cc
   newton_iteration.cc
   parameters.cc

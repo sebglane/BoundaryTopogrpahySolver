@@ -111,16 +111,25 @@ private:
     TimerOutput                 computing_timer;
 
 private:
-    void local_assemble(
+    void local_assemble_matrix(
             const typename DoFHandler<dim>::active_cell_iterator   &cell,
             Assembly::Scratch<dim>                                 &scratch,
-            Assembly::CopyData<dim>                                &data,
-            const bool                                              assemble_matrix);
+            Assembly::CopyData<dim>                                &data);
 
-    void copy_local_to_global(
+    void local_assemble_rhs(
+            const typename DoFHandler<dim>::active_cell_iterator   &cell,
+            Assembly::Scratch<dim>                                 &scratch,
+            Assembly::CopyDataRightHandSide<dim>                   &data,
+            const bool                                              initial_step);
+
+    void copy_local_to_global_matrix(
             const Assembly::CopyData<dim>  &data,
-            const bool                      initial_step,
-            const bool                      assemble_matrix);
+            const bool                      initial_step);
+
+    void copy_local_to_global_rhs(
+            const Assembly::CopyDataRightHandSide<dim> &data,
+            const bool                                  initial_step);
+
 };
 
 }  // namespace BouyantFluid
