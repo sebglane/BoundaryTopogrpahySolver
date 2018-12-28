@@ -98,6 +98,10 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
 
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;
+
+   std::cout << "Number of cores: " << MultithreadInfo::n_cores()
+             << ", number of threads: " << MultithreadInfo::n_threads()
+             << std::endl;
 }
 
 template<int dim>
