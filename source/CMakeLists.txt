@@ -4,10 +4,12 @@ SET(TARGET "main")
 SET(TARGET_SRC
   main.cc
   assemble_system.cc
+  assembly_data.cc
   entropy_viscosity.cc
   equation_data.cc
   grid_factory.cc
   linear_solver.cc
+  local_assemble.cc
   make_grid.cc
   newton_iteration.cc
   parameters.cc

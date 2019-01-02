@@ -22,7 +22,7 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
 
-//#include "assembly_data.h"
+#include "assembly_data.h"
 #include "parameters.h"
 
 namespace TopographyProblem {
@@ -48,7 +48,6 @@ private:
 
     void setup_system_matrix(const std::vector<types::global_dof_index> &dofs_per_block);
 
-    void assemble(const bool initial_step, const bool assemle_matrix);
     void assemble_system(const bool initial_step);
     void assemble_rhs(const bool initial_step);
 
@@ -104,6 +103,18 @@ private:
 
     // monitor of computing times
     TimerOutput                 computing_timer;
+
+private:
+    void local_assemble(
+            const typename DoFHandler<dim>::active_cell_iterator   &cell,
+            Assembly::Scratch<dim>                                 &scratch,
+            Assembly::CopyData<dim>                                &data,
+            const bool                                              assemble_matrix);
+
+    void copy_local_to_global(
+            const Assembly::CopyData<dim>  &data,
+            const bool                      initial_step,
+            const bool assemble_matrix);
 };
 
 }  // namespace BouyantFluid
