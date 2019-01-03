@@ -196,7 +196,7 @@ void TopographySolver<dim>::setup_dofs()
             (dof_handler,
              DomainIdentifiers::Bottom,
              zero_function,
-             nonzero_constraints,
+             zero_constraints,
              fe_system.component_mask(pressure));
         }
 
