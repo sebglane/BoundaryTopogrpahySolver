@@ -85,8 +85,7 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S;
    if (parameters.include_rotation)
        ss << " | "
-          << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby
-          << " | ";
+          << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby;
 
    ss << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
