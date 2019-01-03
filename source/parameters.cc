@@ -12,6 +12,7 @@ namespace TopographyProblem {
 Parameters::Parameters(const std::string &parameter_filename)
 :
 read_dimensional_input(false),
+include_rotation(true),
 // geometry parameters
 amplitude(50),
 wavelength(1e5),
@@ -91,6 +92,11 @@ void Parameters::declare_parameters(ParameterHandler &prm)
                           Patterns::Bool(),
                           "program reads dimensional parameter and computes"
                           "dimensionless numbers");
+
+        prm.declare_entry("include_rotation",
+                          "true",
+                          Patterns::Bool(),
+                          "program includes Coriolis term or not");
     }
     prm.leave_subsection();
 
@@ -229,6 +235,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     prm.enter_subsection("runtime parameters");
     {
         read_dimensional_input = prm.get_bool("read_dimensional_input");
+        include_rotation = prm.get_bool("include_rotation");
     }
     prm.leave_subsection();
 

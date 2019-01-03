@@ -51,9 +51,12 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
               << "This program solves inviscid flow over topography in a stratified layer.\n"
               << "The governing equations are\n\n"
               << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
-              << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n"
-              << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + 2 / Ro  Omega x v\n"
-              << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
+              << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n";
+    if (parameters.include_rotation)
+        std::cout << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + 2 / Ro  Omega x v\n";
+    else
+        std::cout << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v)\n";
+    std::cout << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
               << "The stratification parameter, S, the Rossby number, Ro, and the Froude number, Fr, are given by:\n\n";
 
     // generate a nice table of the equation coefficients
@@ -66,22 +69,31 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
    std::cout << std::endl << "You have chosen the following parameter set:";
 
    std::stringstream ss;
-   ss << "+----------+----------+----------+----------+----------+\n"
-      << "|    k     |    h     |    S     |    Ro    |    Fr    |\n"
-      << "+----------+----------+----------+----------+----------+\n"
-      << "| "
+   if (parameters.include_rotation)
+       ss << "+----------+----------+----------+----------+----------+\n"
+          << "|    k     |    h     |    S     |    Ro    |    Fr    |\n"
+          << "+----------+----------+----------+----------+----------+\n";
+   else
+       ss << "+----------+----------+----------+----------+\n"
+          << "|    k     |    h     |    S     |    Fr    |\n"
+          << "+----------+----------+----------+----------+\n";
+   ss << "| "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wavelength
       << " | "
       << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
       << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S
-      << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby
-      << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
-      << " |\n"
-      << "+----------+----------+----------+----------+----------+\n";
+      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S;
+   if (parameters.include_rotation)
+       ss << " | "
+          << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby
+          << " | ";
 
+   ss << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
+      << " |\n";
+   if (parameters.include_rotation)
+       ss << "+----------+----------+----------+----------+----------+\n";
+   else
+       ss << "+----------+----------+----------+----------+\n";
    std::cout << std::endl << ss.str() << std::endl;
    std::cout << std::endl << std::fixed << std::flush;
 
@@ -176,8 +188,7 @@ void TopographySolver<dim>::refine_mesh()
                                        QGauss<dim-1>(parameters.velocity_degree + 1),
                                        typename FunctionMap<dim>::type(),
                                        present_solution,
-                                       estimated_error_per_cell,
-                                       fe_system.component_mask(velocity));
+                                       estimated_error_per_cell);
     // set refinement flags
     GridRefinement::refine_and_coarsen_fixed_fraction(triangulation,
                                                       estimated_error_per_cell,

@@ -24,6 +24,7 @@ struct Parameters
 
     // runtime parameters
     bool    read_dimensional_input;
+    bool    include_rotation;
 
     // mesh parameters
     double amplitude;

@@ -91,7 +91,7 @@ void TopographySolver<dim>::local_assemble(
                             + (background_velocity_gradient * scratch.phi_velocity[j]) * scratch.phi_velocity[i]
                             + (scratch.grad_phi_velocity[j] * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
                             + (scratch.present_velocity_gradients[q] * scratch.phi_velocity[j]) * scratch.phi_velocity[i]
-                            + (dim == 3?
+                            + (dim == 3 && parameters.include_rotation?
                                equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.phi_velocity[j]) * scratch.phi_velocity[i]
                                : 0.)
                             - scratch.phi_pressure[j] * scratch.div_phi_velocity[i]
@@ -110,7 +110,7 @@ void TopographySolver<dim>::local_assemble(
                     - (scratch.present_velocity_gradients[q] * background_velocity_value) * scratch.phi_velocity[i]
                     - (background_velocity_gradient * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
                     - (scratch.present_velocity_gradients[q] * scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
-                    - (dim == 3?
+                    - (dim == 3 && parameters.include_rotation?
                        equation_coefficients[1] * 2. * cross_product_3d(rotation_vector, scratch.present_velocity_values[q]) * scratch.phi_velocity[i]
                        : 0.)
                     + scratch.present_pressure_values[q] * scratch.div_phi_velocity[i]
