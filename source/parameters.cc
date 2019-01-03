@@ -13,6 +13,7 @@ Parameters::Parameters(const std::string &parameter_filename)
 :
 read_dimensional_input(false),
 include_rotation(true),
+constrain_pressure(false),
 // geometry parameters
 amplitude(50),
 wavelength(1e5),
@@ -96,7 +97,12 @@ void Parameters::declare_parameters(ParameterHandler &prm)
         prm.declare_entry("include_rotation",
                           "true",
                           Patterns::Bool(),
-                          "program includes Coriolis term or not");
+                          "flag to include Coriolis term");
+
+        prm.declare_entry("constrain_pressure",
+                          "false",
+                          Patterns::Bool(),
+                          "flag to constrain pressure field at the bottom");
     }
     prm.leave_subsection();
 
@@ -236,6 +242,7 @@ void Parameters::parse_parameters(ParameterHandler &prm)
     {
         read_dimensional_input = prm.get_bool("read_dimensional_input");
         include_rotation = prm.get_bool("include_rotation");
+        constrain_pressure = prm.get_bool("constrain_pressure");
     }
     prm.leave_subsection();
 
