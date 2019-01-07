@@ -80,12 +80,21 @@ DerivativeForm<1, dim-1, dim> SinusoidalManifold<dim>::push_forward_gradient
         gradF[1][0] = 0.0;
         gradF[1][1] = 1.0;
 
-        gradF[2][0] = amplitude * wavenumber *
-                   cos(wavenumber * chart_point[0]) *
-                   sin(wavenumber * chart_point[1]);
-        gradF[2][1] = amplitude * wavenumber *
-                   sin(wavenumber * chart_point[0]) *
-                   cos(wavenumber * chart_point[1]);
+        if (!single_wave)
+        {
+            gradF[2][0] = amplitude * wavenumber *
+                       cos(wavenumber * chart_point[0]) *
+                       sin(wavenumber * chart_point[1]);
+            gradF[2][1] = amplitude * wavenumber *
+                       sin(wavenumber * chart_point[0]) *
+                       cos(wavenumber * chart_point[1]);
+        }
+        else
+        {
+            gradF[2][0] = amplitude * wavenumber *
+                       cos(wavenumber * chart_point[0]);
+            gradF[2][1] = 0.0;
+        }
         break;
     }
 
