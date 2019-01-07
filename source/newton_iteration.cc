@@ -12,7 +12,8 @@ namespace TopographyProblem {
 template<int dim>
 void TopographySolver<dim>::newton_iteration(const double       tolerance,
                                              const unsigned int max_iteration,
-                                             const bool         is_initial_step)
+                                             const bool         is_initial_step,
+                                             const unsigned int level)
 {
     double current_res  = 1.0;
     double last_res     = 1.0;
@@ -36,6 +37,8 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             evaluation_point = present_solution;
             assemble_rhs(first_step);
             current_res = system_rhs.l2_norm();
+            // output result
+            output_results(level, true);
         }
         else
         {
@@ -78,8 +81,10 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
 template void TopographyProblem::
 TopographySolver<2>::newton_iteration(const double,
                                       const unsigned int,
-                                      const bool);
+                                      const bool,
+                                      const unsigned int);
 template void TopographyProblem::
 TopographySolver<3>::newton_iteration(const double,
                                       const unsigned int,
-                                      const bool);
+                                      const bool,
+                                      const unsigned int);

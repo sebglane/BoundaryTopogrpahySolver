@@ -107,7 +107,9 @@ computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
 }
 
 template<int dim>
-void TopographySolver<dim>::output_results(const unsigned int level) const
+void TopographySolver<dim>::output_results(
+        const unsigned int level,
+        const bool initial_step) const
 {
     std::cout << "   Output results..." << std::endl;
 
@@ -168,6 +170,7 @@ void TopographySolver<dim>::output_results(const unsigned int level) const
     // write output to disk
     const std::string filename = ("solution-" +
                                   Utilities::int_to_string(level, 2) +
+                                  (initial_step ? "-initial": "") +
                                   ".vtk");
     std::ofstream output(filename.c_str());
     data_out.write_vtk(output);
@@ -240,7 +243,8 @@ void TopographySolver<dim>::run()
 
         newton_iteration(parameters.tolerance,
                          parameters.max_iter,
-                         initial_step);
+                         initial_step,
+                         cycle);
 
 
         const Tensor<1,dim> average_boundary_traction

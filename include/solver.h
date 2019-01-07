@@ -55,9 +55,11 @@ private:
 
     void newton_iteration(const double tolerance,
                           const unsigned int max_iteration,
-                          const bool is_initial_step);
+                          const bool is_initial_step,
+                          const unsigned int level);
 
-    void output_results(const unsigned int level = 0) const;
+    void output_results(const unsigned int level = 0,
+                        const bool  initial_step = false) const;
 
     void refine_mesh();
 
