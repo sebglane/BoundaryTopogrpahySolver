@@ -107,19 +107,15 @@ Point<dim> SinusoidalManifold<dim>::push_forward(const Point<dim-1> &chart_point
     else if (normal_direction == 1)
     {
         space_point[1] = amplitude;
+
+        space_point[0] = chart_point[0];
+        space_point[2] = chart_point[1];
+
         if (!single_wave)
-        {
-            space_point[0] = chart_point[0];
-            space_point[1] *= std::sin(wavenumber * chart_point[0]);
-            space_point[2] = chart_point[1];
-            space_point[1] *= std::sin(wavenumber * chart_point[1]);
-        }
+            space_point[1] *= std::sin(wavenumber * chart_point[0]) *
+                              std::sin(wavenumber * chart_point[1]);
         else
-        {
-            space_point[0] = chart_point[0];
-            space_point[2] = chart_point[1];
             space_point[1] *= std::sin(wavenumber * chart_point[wave_direction]);
-        }
         space_point[1] += 1.0;
     }
     else
