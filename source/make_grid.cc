@@ -5,6 +5,7 @@
  *      Author: sg
  */
 
+#include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_generator.h>
@@ -117,24 +118,25 @@ void TopographySolver<3>::make_grid()
                   << std::endl;
     }
 
-    std::ofstream out("plane-grid.vtk");
+    std::ofstream out("plane-grid.msh");
     GridOut grid_out;
-    grid_out.write_vtk(plane_triangulation, out);
-    std::cout << "      2D Grid written to plane-grid.vtk" << std::endl;
+    grid_out.write_msh(plane_triangulation, out);
+    std::cout << "      2D Grid written to plane-grid.msh" << std::endl;
     out.close();
 
     plane_triangulation.clear();
 
     GridIn<dim-1>   grid_in;
     grid_in.attach_triangulation(plane_triangulation);
-    std::ifstream   in("plane-grid.vtk");
-    grid_in.read_vtk(in);
-    std::cout << "      2D Grid read from plane-grid.vtk" << std::endl;
+    std::ifstream   in("plane-grid.msh");
+    grid_in.read_msh(in);
+    std::cout << "      2D Grid read from plane-grid.msh" << std::endl;
     in.close();
 
+    const double depth = 0.1;
     GridGenerator::extrude_triangulation(plane_triangulation,
-                                         3,
-                                         0.1,
+                                         4,
+                                         depth,
                                          triangulation);
 
     triangulation.set_all_manifold_ids(0);
@@ -149,6 +151,7 @@ void TopographySolver<3>::make_grid()
                                                         true,
                                                         wave_direction);
 
+    // assignment of manifold and boundary identifiers on topography
     const double tol = 1e-12;
     for (auto cell: triangulation.active_cell_iterators())
         if (cell->at_boundary())
@@ -164,7 +167,12 @@ void TopographySolver<3>::make_grid()
                     }
                     if (std::all_of(coord.begin(), coord.end(),
                             [&](double d)->bool{return std::abs(d) < tol;}))
+                    {
                         cell->face(f)->set_manifold_id(1);
+                        // topography boundary
+                        cell->face(f)->set_boundary_id(DomainIdentifiers::TopoBndry);
+
+                    }
                 }
 
     TransfiniteInterpolationManifold<dim>   interpolation_manifold;
@@ -179,52 +187,38 @@ void TopographySolver<3>::make_grid()
             for (unsigned int f=0; f < GeometryInfo<dim>::faces_per_cell; ++f)
                 if (cell->face(f)->at_boundary())
                 {
-                    std::vector<double> coord(GeometryInfo<dim>::vertices_per_face);
-                    // x-coordinates
+                    std::vector<std::vector<double>> coords(dim);
+                    for (unsigned int d=0; d<dim; ++d)
+                        coords[d].resize(GeometryInfo<dim>::vertices_per_face);
                     for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
-                        coord[v] = cell->face(f)->vertex(v)[0];
+                        for (unsigned int d=0; d<dim; ++d)
+                            coords[d][v] = cell->face(f)->vertex(v)[d];
+                    // x-coordinates
                     // left boundary
-                    if (std::all_of(coord.begin(), coord.end(),
+                    if (std::all_of(coords[0].begin(), coords[0].end(),
                             [&](double d)->bool{return std::abs(d) < tol;}))
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Left);
                     // right boundary
-                    else if (std::all_of(coord.begin(), coord.end(),
+                    else if (std::all_of(coords[0].begin(), coords[0].end(),
                             [&](double d)->bool{return std::abs(d - 1.0) < tol;}))
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Right);
 
                     // y-coordinates
-                    const double height = 1.0;
-                    for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
-                        coord[v] = cell->face(f)->vertex(v)[1];
                     // bottom boundary
-                    if (std::all_of(coord.begin(), coord.end(),
+                    if (std::all_of(coords[1].begin(), coords[1].end(),
                             [&](double d)->bool{return std::abs(d) < tol;}))
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Bottom);
-                    // top boundary
-                    else if (std::all_of(coord.begin(), coord.end(),
-                            [&](double d)->bool{return std::abs(d - height) < tol;}))
-                        cell->face(f)->set_boundary_id(DomainIdentifiers::TopoBndry);
 
                     // z-coordinates
-                    const double depth = 0.1;
-                    for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
-                        coord[v] = cell->face(f)->vertex(v)[dim-1];
                     // front boundary
-                    if (std::all_of(coord.begin(), coord.end(),
+                    if (std::all_of(coords[2].begin(), coords[2].end(),
                             [&](double d)->bool{return std::abs(d) < tol;}))
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Front);
                     // back boundary
-                    else if (std::all_of(coord.begin(), coord.end(),
+                    else if (std::all_of(coords[2].begin(), coords[2].end(),
                             [&](double d)->bool{return std::abs(d - depth) < tol;}))
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Back);
                 }
-
-    std::set<types::boundary_id>    boundary_ids;
-    for (auto cell: triangulation.active_cell_iterators())
-        if (cell->at_boundary())
-            for (unsigned int f=0; f < GeometryInfo<dim>::faces_per_cell; ++f)
-                if (cell->face(f)->at_boundary())
-                    boundary_ids.insert(cell->face(f)->boundary_id());
 
     out.open("grid.vtk");
     grid_out.write_vtk(triangulation, out);
