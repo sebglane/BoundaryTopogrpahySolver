@@ -32,13 +32,13 @@ equation_coefficients{parameters.S,
                       1. / parameters.Rossby,
                       1. / (parameters.Froude * parameters.Froude)},
 // model parameters
-rotation_vector(Point<dim>::unit_vector(dim-1)),
-gravity_vector(-Point<dim>::unit_vector(dim-1)),
+rotation_vector((dim == 3? Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
+gravity_vector((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_velocity_value(Point<dim>::unit_vector(0)),
-background_density_gradient(-Point<dim>::unit_vector(dim-1)),
+background_density_gradient((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_velocity_gradient(),
 // triangulation
-triangulation(),
+triangulation(Triangulation<dim>::maximum_smoothing),
 // finite element part
 fe_system(FE_Q<dim>(parameters.density_degree), 1,
           FESystem<dim>(FE_Q<dim>(parameters.velocity_degree), dim), 1,

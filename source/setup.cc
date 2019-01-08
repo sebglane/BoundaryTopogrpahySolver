@@ -74,7 +74,7 @@ void TopographySolver<dim>::setup_dofs()
         GridTools::collect_periodic_faces(dof_handler,
                 DomainIdentifiers::Front,
                 DomainIdentifiers::Back,
-                1,
+                2,
                 periodicity_vector);
         break;
     default:
