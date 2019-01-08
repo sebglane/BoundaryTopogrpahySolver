@@ -140,33 +140,32 @@ void TopographySolver<3>::make_grid()
     triangulation.set_all_manifold_ids(0);
     triangulation.set_all_manifold_ids_on_boundary(0);
 
+    const unsigned int normal_direction = 1;
+    const unsigned int wave_direction = 0;
+
     GridFactory::SinusoidalManifold<dim> sinus_manifold(2.*numbers::PI,
                                                         parameters.amplitude / parameters.wavelength,
-                                                        true);
+                                                        normal_direction,
+                                                        true,
+                                                        wave_direction);
 
     const double tol = 1e-12;
     for (auto cell: triangulation.active_cell_iterators())
-    {
         if (cell->at_boundary())
             for (unsigned int f=0; f < GeometryInfo<dim>::faces_per_cell; ++f)
-                if (!cell->face(f)->at_boundary())
+                if (cell->face(f)->at_boundary())
                 {
                     std::vector<double> coord(GeometryInfo<dim>::vertices_per_face);
                     for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
                     {
                         const Point<dim>    vertex = cell->face(f)->vertex(v);
-                        const Point<dim-1>  chart_point = sinus_manifold.pull_back(vertex);
-                        const Point<dim>    space_point = sinus_manifold.push_forward(chart_point);
-                        coord[v] = vertex[1] - space_point[1];
-                        std::cout << coord[v] << ", ";
+                        const Point<dim>    space_point = sinus_manifold.push_forward(sinus_manifold.pull_back(vertex));
+                        coord[v] = vertex[normal_direction] - space_point[normal_direction];
                     }
-                    std::cout << std::endl;
-
                     if (std::all_of(coord.begin(), coord.end(),
-                            [&](double d)->bool{return std::abs(d - 1.0) < tol;}))
+                            [&](double d)->bool{return std::abs(d) < tol;}))
                         cell->face(f)->set_manifold_id(1);
                 }
-    }
 
     TransfiniteInterpolationManifold<dim>   interpolation_manifold;
     interpolation_manifold.initialize(triangulation);
@@ -181,7 +180,6 @@ void TopographySolver<3>::make_grid()
                 if (cell->face(f)->at_boundary())
                 {
                     std::vector<double> coord(GeometryInfo<dim>::vertices_per_face);
-
                     // x-coordinates
                     for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
                         coord[v] = cell->face(f)->vertex(v)[0];
@@ -221,7 +219,12 @@ void TopographySolver<3>::make_grid()
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Back);
                 }
 
-    triangulation.refine_global(n_global_refinements);
+    std::set<types::boundary_id>    boundary_ids;
+    for (auto cell: triangulation.active_cell_iterators())
+        if (cell->at_boundary())
+            for (unsigned int f=0; f < GeometryInfo<dim>::faces_per_cell; ++f)
+                if (cell->face(f)->at_boundary())
+                    boundary_ids.insert(cell->face(f)->boundary_id());
 
     out.open("grid.vtk");
     grid_out.write_vtk(triangulation, out);

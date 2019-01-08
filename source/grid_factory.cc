@@ -5,6 +5,7 @@
  *      Author: sg
  */
 
+#include <deal.II/base/exceptions.h>
 #include <deal.II/grid/grid_generator.h>
 
 #include <algorithm>
@@ -16,28 +17,52 @@
 namespace GridFactory {
 
 template <int dim>
-SinusoidalManifold<dim>::SinusoidalManifold(const double    wavenumber,
-                                            const double    amplitude,
-                                            const bool      single_wave)
+SinusoidalManifold<dim>::SinusoidalManifold(const double        wavenumber,
+                                            const double        amplitude,
+                                            const unsigned int  normal_direction_,
+                                            const bool          single_wave,
+                                            const unsigned int  wave_direction_)
 :
 ChartManifold<dim,dim,dim-1>(),
 wavenumber(wavenumber),
 amplitude(amplitude),
-single_wave(single_wave)
-{}
+single_wave(single_wave),
+normal_direction(normal_direction_),
+wave_direction(wave_direction_)
+{
+    Assert(normal_direction < dim,
+           ExcLowerRange(normal_direction, dim));
+    Assert(wave_direction < dim,
+               ExcLowerRange(wave_direction, dim));
+}
 
 template <int dim>
 std::unique_ptr<Manifold<dim,dim>> SinusoidalManifold<dim>::clone() const
 {
-  return std::make_unique<SinusoidalManifold<dim>>(wavenumber, amplitude);
+  return std::make_unique<SinusoidalManifold<dim>>(wavenumber,
+                                                   amplitude,
+                                                   normal_direction,
+                                                   single_wave);
 }
 
 template<int dim>
 Point<dim-1> SinusoidalManifold<dim>::pull_back(const Point<dim> &space_point) const
 {
     Point<dim-1> chart_point;
-    for (unsigned int d=0; d<dim-1; ++d)
-        chart_point[d] = space_point[d];
+    if (normal_direction == 0)
+        for (unsigned int d=1; d<dim; ++d)
+            chart_point[d] = space_point[d];
+    else if (normal_direction == dim -1)
+        for (unsigned int d=0; d<dim-1; ++d)
+            chart_point[d] = space_point[d];
+    else if (normal_direction == 1)
+    {
+        chart_point[0] = space_point[0];
+        chart_point[1] = space_point[2];
+    }
+    else
+        Assert(false, ExcNotImplemented());
+
     return chart_point;
 }
 
@@ -45,20 +70,60 @@ template<int dim>
 Point<dim> SinusoidalManifold<dim>::push_forward(const Point<dim-1> &chart_point) const
 {
     Point<dim> space_point;
-    space_point[dim-1] = amplitude;
-    if (!single_wave)
-        for (unsigned int d=0; d<dim-1; ++d)
-        {
-            space_point[d] = chart_point[d];
-            space_point[dim-1] *= std::sin(wavenumber * chart_point[d]);
-        }
-    else
+    if (normal_direction == 0)
     {
-        for (unsigned int d=0; d<dim-1; ++d)
-            space_point[d] = chart_point[d];
-        space_point[dim-1] *= std::sin(wavenumber * chart_point[0]);
+        space_point[0] = amplitude;
+        if (!single_wave)
+            for (unsigned int d=1; d<dim; ++d)
+            {
+                space_point[d] = chart_point[d];
+                space_point[0] *= std::sin(wavenumber * chart_point[d]);
+            }
+        else
+        {
+            for (unsigned int d=1; d<dim; ++d)
+                space_point[d] = chart_point[d];
+            space_point[0] *= std::sin(wavenumber * chart_point[wave_direction]);
+        }
+        space_point[0] += 1.0;
     }
-    space_point[dim-1] += 1.0;
+    else if (normal_direction == dim -1)
+    {
+        space_point[dim-1] = amplitude;
+        if (!single_wave)
+            for (unsigned int d=0; d<dim-1; ++d)
+            {
+                space_point[d] = chart_point[d];
+                space_point[dim-1] *= std::sin(wavenumber * chart_point[d]);
+            }
+        else
+        {
+            for (unsigned int d=0; d<dim-1; ++d)
+                space_point[d] = chart_point[d];
+            space_point[dim-1] *= std::sin(wavenumber * chart_point[wave_direction]);
+        }
+        space_point[dim-1] += 1.0;
+    }
+    else if (normal_direction == 1)
+    {
+        space_point[1] = amplitude;
+        if (!single_wave)
+        {
+            space_point[0] = chart_point[0];
+            space_point[1] *= std::sin(wavenumber * chart_point[0]);
+            space_point[2] = chart_point[1];
+            space_point[1] *= std::sin(wavenumber * chart_point[1]);
+        }
+        else
+        {
+            space_point[0] = chart_point[0];
+            space_point[2] = chart_point[1];
+            space_point[1] *= std::sin(wavenumber * chart_point[wave_direction]);
+        }
+        space_point[1] += 1.0;
+    }
+    else
+        Assert(false, ExcNotImplemented());
     return space_point;
 }
 
@@ -79,30 +144,62 @@ DerivativeForm<1, dim-1, dim> SinusoidalManifold<dim>::push_forward_gradient
 
     case 3:
     {
-        gradF[0][0] = 1.0;
-        gradF[0][1] = 0.0;
-
-        gradF[1][0] = 0.0;
-        gradF[1][1] = 1.0;
-
-        if (!single_wave)
+        if (normal_direction == 0)
         {
-            gradF[2][0] = amplitude * wavenumber *
-                       cos(wavenumber * chart_point[0]) *
-                       sin(wavenumber * chart_point[1]);
-            gradF[2][1] = amplitude * wavenumber *
-                       sin(wavenumber * chart_point[0]) *
-                       cos(wavenumber * chart_point[1]);
+            gradF[1][0] = 1.0;
+            gradF[2][1] = 1.0;
+
+            if (!single_wave)
+                gradF[0][wave_direction] = amplitude * wavenumber *
+                                           cos(wavenumber * chart_point[wave_direction]);
+            else
+            {
+                gradF[0][0] = amplitude * wavenumber *
+                              cos(wavenumber * chart_point[0]) *
+                              sin(wavenumber * chart_point[1]);
+                gradF[0][1] = amplitude * wavenumber *
+                              sin(wavenumber * chart_point[0]) *
+                              cos(wavenumber * chart_point[1]);
+            }
         }
-        else
+        else if (normal_direction == 1)
         {
-            gradF[2][0] = amplitude * wavenumber *
-                       cos(wavenumber * chart_point[0]);
-            gradF[2][1] = 0.0;
+            gradF[0][0] = 1.0;
+            gradF[2][1] = 1.0;
+
+            if (!single_wave)
+                gradF[1][wave_direction] = amplitude * wavenumber *
+                                               cos(wavenumber * chart_point[wave_direction]);
+            else
+            {
+                gradF[1][0] = amplitude * wavenumber *
+                              cos(wavenumber * chart_point[0]) *
+                              sin(wavenumber * chart_point[1]);
+                gradF[1][1] = amplitude * wavenumber *
+                              sin(wavenumber * chart_point[0]) *
+                              cos(wavenumber * chart_point[1]);
+            }
+        }
+        else if (normal_direction == 2)
+        {
+            gradF[0][0] = 1.0;
+            gradF[1][1] = 1.0;
+
+            if (!single_wave)
+                gradF[2][wave_direction] = amplitude * wavenumber *
+                                               cos(wavenumber * chart_point[wave_direction]);
+            else
+            {
+                gradF[2][0] = amplitude * wavenumber *
+                              cos(wavenumber * chart_point[0]) *
+                              sin(wavenumber * chart_point[1]);
+                gradF[2][1] = amplitude * wavenumber *
+                              sin(wavenumber * chart_point[0]) *
+                              cos(wavenumber * chart_point[1]);
+            }
         }
         break;
     }
-
     default:
         Assert(false, ExcNotImplemented());
     }

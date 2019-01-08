@@ -22,9 +22,11 @@ class SinusoidalManifold: public ChartManifold<dim,dim,dim-1>
 {
 public:
 
-    SinusoidalManifold(const double wavenumber = 2. * numbers::PI,
-                       const double amplitude = 0.1,
-                       const bool   single_wave = true);
+    SinusoidalManifold(const double         wavenumber = 2. * numbers::PI,
+                       const double         amplitude = 0.1,
+                       const unsigned int   normal_direction = 1,
+                       const bool           single_wave = true,
+                       const unsigned int   wave_direction = 0);
 
     virtual std::unique_ptr<Manifold<dim,dim>> clone() const;
 
@@ -42,6 +44,9 @@ private:
     const double    amplitude;
 
     const bool      single_wave;
+
+    const unsigned int  normal_direction;
+    const unsigned int  wave_direction;
 };
 
 
