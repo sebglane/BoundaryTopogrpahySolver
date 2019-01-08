@@ -5,6 +5,11 @@
  *      Author: sg
  */
 
+#include <deal.II/grid/grid_generator.h>
+
+#include <algorithm>
+#include <cmath>
+
 #include "equation_data.h"
 #include "grid_factory.h"
 
@@ -105,14 +110,16 @@ DerivativeForm<1, dim-1, dim> SinusoidalManifold<dim>::push_forward_gradient
 }
 
 template<int dim>
-TopographyBox<dim>::TopographyBox(const double wavenumber,
-                                  const double amplitude,
-                                  const bool   include_exterior,
-                                  const double exterior_length)
+TopographyBox<dim>::TopographyBox(const double  wavenumber,
+                                  const double  amplitude,
+                                  const bool    single_wave,
+                                  const bool    include_exterior,
+                                  const double  exterior_length)
 :
+single_wave(single_wave),
 include_exterior(include_exterior),
 exterior_length(exterior_length),
-sinus_manifold(wavenumber, amplitude)
+sinus_manifold(wavenumber, amplitude, single_wave)
 {
     Assert(amplitude < 1.0, ExcLowerRangeType<double>(amplitude,1.0));
 }
@@ -123,7 +130,25 @@ void TopographyBox<dim>::create_coarse_mesh(Triangulation<dim> &coarse_grid)
 {
     if (!include_exterior)
     {
-        GridGenerator::hyper_cube(coarse_grid);
+        const Point<dim>    origin;
+
+        Point<dim>    corner;
+        std::vector<unsigned int> repetitions(dim);
+        if (!single_wave)
+            for (unsigned int d=0; d<dim; ++d)
+                corner[d] = 1.0;
+        else
+        {
+            for (unsigned int d=0; d<dim; ++d)
+                corner[d] = 1.0;
+            if (dim == 3)
+                corner[1] = 0.1;
+
+        }
+
+        GridGenerator::hyper_rectangle(coarse_grid,
+                                       origin,
+                                       corner);
 
         coarse_grid.set_all_manifold_ids(0);
         coarse_grid.set_all_manifold_ids_on_boundary(0);
@@ -156,9 +181,20 @@ void TopographyBox<dim>::create_coarse_mesh(Triangulation<dim> &coarse_grid)
     else if (include_exterior)
     {
         const Point<dim> origin;
-        Point<dim> corner;
-        for (unsigned int d=0; d<dim-1; ++d)
-            corner[d] = 1.0;
+
+        Point<dim>    corner;
+        std::vector<unsigned int> repetitions(dim);
+        if (!single_wave)
+            for (unsigned int d=0; d<dim; ++d)
+                corner[d] = 1.0;
+        else
+        {
+            for (unsigned int d=0; d<dim; ++d)
+                corner[d] = 1.0;
+
+            if (dim == 3)
+                corner[1] = 0.1;
+        }
         corner[dim-1] = exterior_length + 1.0;
 
         std::vector<std::vector<double>> step_sizes;
@@ -167,11 +203,10 @@ void TopographyBox<dim>::create_coarse_mesh(Triangulation<dim> &coarse_grid)
 
         step_sizes.push_back(std::vector<double>{1.0, exterior_length});
 
-        GridGenerator::subdivided_hyper_rectangle(
-                coarse_grid,
-                step_sizes,
-                origin,
-                corner);
+        GridGenerator::subdivided_hyper_rectangle(coarse_grid,
+                                                  step_sizes,
+                                                  origin,
+                                                  corner);
 
         coarse_grid.set_all_manifold_ids(0);
         coarse_grid.set_all_manifold_ids_on_boundary(0);
@@ -222,7 +257,7 @@ void TopographyBox<dim>::create_coarse_mesh(Triangulation<dim> &coarse_grid)
                     {
                         cell->face(f)->set_boundary_id(DomainIdentifiers::Left);
                     }
-                    // left boundary
+                    // right boundary
                     else if (std::all_of(coord.begin(), coord.end(),
                             [&](double d)->bool{return std::abs(d - 1.0) < tol;}))
                     {
@@ -232,29 +267,35 @@ void TopographyBox<dim>::create_coarse_mesh(Triangulation<dim> &coarse_grid)
                     switch (dim)
                     {
                     case 2:
+                    {
                         // y-coordinates
                         for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
                             coord[v] = cell->face(f)->vertex(v)[1];
+                        const double height = (include_exterior ? 1.0 + exterior_length: 1.0);
                         // bottom boundary
                         if (std::all_of(coord.begin(), coord.end(),
                                 [&](double d)->bool{return std::abs(d) < tol;}))
                             cell->face(f)->set_boundary_id(DomainIdentifiers::Bottom);
                         // top boundary
                         else if (std::all_of(coord.begin(), coord.end(),
-                                [&](double d)->bool{return std::abs(d - exterior_length) < tol;}) && include_exterior)
+                                [&](double d)->bool{return std::abs(d - height) < tol;}) && include_exterior)
                             cell->face(f)->set_boundary_id(DomainIdentifiers::FVB);
                         break;
+                    }
                     case 3:
+                    {
                         // y-coordinates
                         for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
                             coord[v] = cell->face(f)->vertex(v)[1];
+                        const double height = (include_exterior ? 1.0 + exterior_length: 1.0);
+                        const double depth = (single_wave ? 0.1: 1.0);
                         // front boundary
                         if (std::all_of(coord.begin(), coord.end(),
                                 [&](double d)->bool{return std::abs(d) < tol;}))
                             cell->face(f)->set_boundary_id(DomainIdentifiers::Front);
                         // back boundary
                         else if (std::all_of(coord.begin(), coord.end(),
-                                [&](double d)->bool{return std::abs(d - 1.0) < tol;}))
+                                [&](double d)->bool{return std::abs(d - depth) < tol;}))
                             cell->face(f)->set_boundary_id(DomainIdentifiers::Back);
 
                         // z-coordinates
@@ -266,10 +307,11 @@ void TopographyBox<dim>::create_coarse_mesh(Triangulation<dim> &coarse_grid)
                             cell->face(f)->set_boundary_id(DomainIdentifiers::Bottom);
                         // top boundary
                         else if (std::all_of(coord.begin(), coord.end(),
-                                [&](double d)->bool{return std::abs(d - exterior_length) < tol;}) &&
+                                [&](double d)->bool{return std::abs(d - height) < tol;}) &&
                                 include_exterior)
                             cell->face(f)->set_boundary_id(DomainIdentifiers::FVB);
                         break;
+                    }
                     default:
                         Assert(false, ExcImpossibleInDim(dim));
                         break;
