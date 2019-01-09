@@ -20,7 +20,6 @@
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/trilinos_precondition.h>
 
 #include "assembly_data.h"
 #include "parameters.h"
