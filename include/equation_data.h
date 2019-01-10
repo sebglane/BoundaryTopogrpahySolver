@@ -77,9 +77,18 @@ private:
     Tensor<1,dim>           direction_vector;
 };
 
+template<int dim>
+class BackgroundMagneticField : public Function<dim>
+{
+public:
+    BackgroundMagneticField();
+
+    virtual void    vector_value(const Point<dim>   &point,
+                                 Vector<double>     &value) const;
+
+private:
+    Tensor<1,dim>           direction_vector;
+};
 }  // namespace EquationData
-
-
-
 
 #endif /* INCLUDE_EQUATION_DATA_H_ */

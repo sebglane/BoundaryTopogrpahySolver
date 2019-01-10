@@ -30,6 +30,14 @@ std::vector<std::string> PostProcessor<dim>::get_names() const
     // total velocity
     for (unsigned int d=0; d<dim; ++d)
         solution_names.push_back("total_velocity");
+    // magnetic field
+    for (unsigned int d=0; d<dim; ++d)
+        solution_names.push_back("magnetic_field");
+    // total magnetic field
+    for (unsigned int d=0; d<dim; ++d)
+        solution_names.push_back("total_magnetic_field");
+    // scalar field
+    solution_names.push_back("scalar_field");
 
     return solution_names;
 }
@@ -57,7 +65,14 @@ PostProcessor<dim>::get_data_component_interpretation() const
     // total velocity
     for (unsigned int d=0; d<dim; ++d)
         component_interpretation.push_back(DataComponentInterpretation::component_is_part_of_vector);
-
+    // magnetic field
+    for (unsigned int d=0; d<dim; ++d)
+        component_interpretation.push_back(DataComponentInterpretation::component_is_part_of_vector);
+    // total magnetic field
+    for (unsigned int d=0; d<dim; ++d)
+        component_interpretation.push_back(DataComponentInterpretation::component_is_part_of_vector);
+    // scalar field
+    component_interpretation.push_back(DataComponentInterpretation::component_is_scalar);
     return component_interpretation;
 }
 
@@ -70,15 +85,16 @@ void PostProcessor<dim>::evaluate_vector_field(
     const unsigned int n_quadrature_points = inputs.solution_values.size();
 
     Vector<double>      background_velocity_values(background_velocity.n_components);
+    Vector<double>      background_field_values(background_velocity.n_components);
 
     AssertDimension(computed_quantities.size(),
                     n_quadrature_points);
     AssertDimension(inputs.solution_values[0].size(),
-                    dim+2);
+                    2*dim+3);
 
     for (unsigned int q=0; q<n_quadrature_points; ++q)
     {
-        AssertDimension(computed_quantities[q].size(), 2*dim+2);
+        AssertDimension(computed_quantities[q].size(), 4*dim+3);
         // density
         computed_quantities[q][0] = inputs.solution_values[q][0];
         // velocity
@@ -92,10 +108,20 @@ void PostProcessor<dim>::evaluate_vector_field(
         for (unsigned int d=0; d<dim; ++d)
             computed_quantities[q][d+dim+2] = inputs.solution_values[q][d+1]
                                             + background_velocity_values[d]  ;
+        // magnetic field
+        for (unsigned int d=0; d<dim; ++d)
+            computed_quantities[q][d+2*dim+2] = inputs.solution_values[q][d+dim+2];
+        // total magnetic field
+        background_field.vector_value(inputs.evaluation_points[q],
+                                      background_field_values);
+        for (unsigned int d=0; d<dim; ++d)
+            computed_quantities[q][d+3*dim+2] = inputs.solution_values[q][d+dim+2]
+                                              + background_velocity_values[d]  ;
+        // scalar field
+        computed_quantities[q][4*dim+2] = inputs.solution_values[q][2*dim+2];
     }
 }
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template class TopographyProblem::PostProcessor<2>;
 template class TopographyProblem::PostProcessor<3>;

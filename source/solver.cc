@@ -40,6 +40,7 @@ background_velocity_value(Point<dim>::unit_vector(0)),
 background_field_value((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_density_gradient((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_velocity_gradient(),
+background_field_curl(),
 background_field_gradient(),
 // triangulation
 triangulation(Triangulation<dim>::maximum_smoothing),
