@@ -46,7 +46,9 @@ triangulation(Triangulation<dim>::maximum_smoothing),
 // finite element part
 fe_system(FE_Q<dim>(parameters.density_degree), 1,
           FESystem<dim>(FE_Q<dim>(parameters.velocity_degree), dim), 1,
-          FE_Q<dim>(parameters.velocity_degree - 1), 1),
+          FE_Q<dim>(parameters.velocity_degree - 1), 1,
+          FE_Q<dim>(parameters.magnetic_degree), dim,
+          FE_Q<dim>(parameters.magnetic_degree), 1),
 dof_handler(triangulation),
 // monitor
 computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)

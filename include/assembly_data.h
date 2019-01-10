@@ -59,6 +59,20 @@ struct Scratch
     std::vector<double>         present_pressure_values;
 
     std::vector<Tensor<1,dim>>  present_face_velocity_values;
+
+    // magnetic part
+    std::vector<double>         div_phi_field;
+    std::vector<Tensor<1,dim>>  phi_field;
+    std::vector<Tensor<1,dim>>  curl_phi_field;
+    std::vector<Tensor<2,dim>>  grad_phi_field;
+    std::vector<double>         phi_scalar;
+
+    std::vector<double>         present_field_divergences;
+    std::vector<Tensor<1,dim>>  present_field_curls;
+    std::vector<double>         present_scalar_values;
+
+    std::vector<Tensor<1,dim>>  present_face_field_curls;
+    std::vector<double>         present_face_scalar_values;
 };
 
 template <int dim>
