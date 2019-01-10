@@ -220,6 +220,7 @@ void TopographySolver<dim>::local_assemble(
                                         + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (background_field_value * scratch.phi_velocity[i])
                                         + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[i]))
                                 // induction equation
+                                - cross_product_3d(normal_vectors[q], background_field_value) * scratch.curl_phi_field[i]
                                 + scratch.present_face_scalar_values[q] * normal_vectors[q] * scratch.curl_phi_field[i]
                                 ) * scratch.fe_face_values.JxW(q);
                     }
