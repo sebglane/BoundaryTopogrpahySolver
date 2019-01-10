@@ -134,7 +134,7 @@ void TopographySolver<dim>::setup_dofs()
         // constrain pressure at bottom
         if (parameters.constrain_pressure)
         {
-            const FEValuesExtractors::Vector    pressure(dim+1);
+            const FEValuesExtractors::Scalar    pressure(dim+1);
             VectorTools::interpolate_boundary_values
             (dof_handler,
              DomainIdentifiers::Bottom,
@@ -191,7 +191,7 @@ void TopographySolver<dim>::setup_dofs()
         // constrain pressure at bottom
         if (parameters.constrain_pressure)
         {
-            const FEValuesExtractors::Vector    pressure(dim+1);
+            const FEValuesExtractors::Scalar    pressure(dim+1);
             VectorTools::interpolate_boundary_values
             (dof_handler,
              DomainIdentifiers::Bottom,
