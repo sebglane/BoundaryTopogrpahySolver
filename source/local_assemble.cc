@@ -15,7 +15,8 @@ void TopographySolver<dim>::local_assemble(
     const typename DoFHandler<dim>::active_cell_iterator   &cell,
     Assembly::Scratch<dim>                                 &scratch,
     Assembly::CopyData<dim>                                &data,
-    const bool                                              assemble_matrix)
+    const bool                                              assemble_matrix,
+    const bool                                              initial_step)
 {
     const unsigned int dofs_per_cell = scratch.fe_values.get_fe().dofs_per_cell;
     const unsigned int n_q_points = scratch.fe_values.n_quadrature_points;
@@ -220,7 +221,7 @@ void TopographySolver<dim>::local_assemble(
                                         + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (background_field_value * scratch.phi_velocity[i])
                                         + (normal_vectors[q] * scratch.present_face_field_curls[q]) * (scratch.present_face_field_curls[q] * scratch.phi_velocity[i]))
                                 // induction equation
-                                - cross_product_3d(normal_vectors[q], background_field_value) * scratch.curl_phi_field[i]
+                                - (initial_step && assemble_matrix? cross_product_3d(normal_vectors[q], background_field_value) * scratch.curl_phi_field[i] : 0.)
                                 + scratch.present_face_scalar_values[q] * normal_vectors[q] * scratch.curl_phi_field[i]
                                 ) * scratch.fe_face_values.JxW(q);
                     }
@@ -231,8 +232,8 @@ void TopographySolver<dim>::local_assemble(
 template<int dim>
 void TopographySolver<dim>::copy_local_to_global(
         const Assembly::CopyData<dim>  &data,
-        const bool                      initial_step,
-        const bool                      assemble_matrix)
+        const bool                      assemble_matrix,
+        const bool                      initial_step)
 {
     const ConstraintMatrix &constraints_used = (initial_step ?
                                                 nonzero_constraints
@@ -256,8 +257,9 @@ template void TopographyProblem::TopographySolver<3>::local_assemble(
         const typename dealii::DoFHandler<3>::active_cell_iterator  &,
         Assembly::Scratch<3>                                        &,
         Assembly::CopyData<3>                                       &,
+        const bool                                                   ,
         const bool                                                    );
 
 template void TopographyProblem::TopographySolver<3>::copy_local_to_global(
-const Assembly::CopyData<3> &, const bool , const bool );
+const Assembly::CopyData<3> &, const bool , const bool);
 

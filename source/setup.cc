@@ -101,19 +101,19 @@ void TopographySolver<dim>::setup_dofs()
          nonzero_constraints);
 
         // constrain normal components of velocity
-        std::set<types::boundary_id> no_normal_flux_boundaries;
+        std::set<types::boundary_id>    no_normal_flux_boundaries;
         no_normal_flux_boundaries.insert(DomainIdentifiers::BoundaryIds::TopoBndry);
 
         const EquationData::VelocityBoundaryValues<dim>    velocity_boundary_values;
-        std::map<types::boundary_id, const Function<dim> *> function_map;
+        std::map<types::boundary_id, const Function<dim> *> function_map_velocity;
         for (const auto it: no_normal_flux_boundaries)
-          function_map[it] = &velocity_boundary_values;
+            function_map_velocity[it] = &velocity_boundary_values;
 
         VectorTools::compute_nonzero_normal_flux_constraints
         (dof_handler,
          1,
          no_normal_flux_boundaries,
-         function_map,
+         function_map_velocity,
          nonzero_constraints);
 
         // zero function
@@ -140,7 +140,7 @@ void TopographySolver<dim>::setup_dofs()
         // constrain pressure at bottom
         if (parameters.constrain_pressure)
         {
-            const FEValuesExtractors::Vector    pressure(dim+1);
+            const FEValuesExtractors::Scalar    pressure(dim+1);
             VectorTools::interpolate_boundary_values
             (dof_handler,
              DomainIdentifiers::Bottom,
@@ -173,7 +173,7 @@ void TopographySolver<dim>::setup_dofs()
          zero_constraints);
 
         // constrain normal components of velocity
-        std::set<types::boundary_id> no_normal_flux_boundaries;
+        std::set<types::boundary_id>    no_normal_flux_boundaries;
         no_normal_flux_boundaries.insert(DomainIdentifiers::BoundaryIds::TopoBndry);
 
         VectorTools::compute_no_normal_flux_constraints
@@ -206,7 +206,7 @@ void TopographySolver<dim>::setup_dofs()
         // constrain pressure at bottom
         if (parameters.constrain_pressure)
         {
-            const FEValuesExtractors::Vector    pressure(dim+1);
+            const FEValuesExtractors::Scalar    pressure(dim+1);
             VectorTools::interpolate_boundary_values
             (dof_handler,
              DomainIdentifiers::Bottom,

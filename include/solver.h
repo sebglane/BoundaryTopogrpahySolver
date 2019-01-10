@@ -113,12 +113,13 @@ private:
             const typename DoFHandler<dim>::active_cell_iterator   &cell,
             Assembly::Scratch<dim>                                 &scratch,
             Assembly::CopyData<dim>                                &data,
-            const bool                                              assemble_matrix);
+            const bool                                              assemble_matrix,
+            const bool                                              initial_step);
 
     void copy_local_to_global(
             const Assembly::CopyData<dim>  &data,
-            const bool                      initial_step,
-            const bool assemble_matrix);
+            const bool                      assemble_matrix,
+            const bool                      initial_step);
 };
 
 }  // namespace BouyantFluid
