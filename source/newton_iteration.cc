@@ -66,9 +66,25 @@ void TopographySolver<dim>::newton_iteration(const double       tolerance,
             present_solution = evaluation_point;
         }
         // output residual
-        std::cout << "Iteration: " << iteration
-                  << ", residual: "
-                  << std::scientific << current_res << std::fixed
+        std::cout << "Iteration: " << std::setw(3) << iteration
+                  << ", total residual: "
+                  << std::scientific << current_res
+                  << std::endl
+                  << "                density residual: "
+                  << std::scientific << system_rhs.block(0).l2_norm()
+                  << std::endl
+                  << "                momentum residual: "
+                  << std::scientific << system_rhs.block(1).l2_norm()
+                  << std::endl
+                  << "                pressure residual: "
+                  << std::scientific << system_rhs.block(2).l2_norm()
+                  << std::endl
+                  << "                magnetic field residual: "
+                  << std::scientific << system_rhs.block(3).l2_norm()
+                  << std::endl
+                  << "                magnetic scalar residual: "
+                  << std::scientific << system_rhs.block(4).l2_norm()
+                  << std::fixed
                   << std::endl;
         // update residual
         last_res = current_res;
