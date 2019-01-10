@@ -90,8 +90,6 @@ void TopographySolver<dim>::assemble_rhs(const bool initial_step)
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::assemble_system(const bool);
 template void TopographyProblem::TopographySolver<3>::assemble_system(const bool);
 
-template void TopographyProblem::TopographySolver<2>::assemble_rhs(const bool);
 template void TopographyProblem::TopographySolver<3>::assemble_rhs(const bool);

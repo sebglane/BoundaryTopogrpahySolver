@@ -61,5 +61,4 @@ Tensor<1,dim> TopographySolver<dim>::compute_boundary_traction() const
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template dealii::Tensor<1,2> TopographyProblem::TopographySolver<2>::compute_boundary_traction() const;
 template dealii::Tensor<1,3> TopographyProblem::TopographySolver<3>::compute_boundary_traction() const;

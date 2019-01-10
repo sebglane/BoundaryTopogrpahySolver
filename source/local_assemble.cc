@@ -185,19 +185,12 @@ void TopographySolver<dim>::copy_local_to_global(
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::local_assemble(
-        const typename dealii::DoFHandler<2>::active_cell_iterator  &,
-        Assembly::Scratch<2>                                        &,
-        Assembly::CopyData<2>                                       &,
-        const bool                                                    );
 template void TopographyProblem::TopographySolver<3>::local_assemble(
         const typename dealii::DoFHandler<3>::active_cell_iterator  &,
         Assembly::Scratch<3>                                        &,
         Assembly::CopyData<3>                                       &,
         const bool                                                    );
 
-template void TopographyProblem::TopographySolver<2>::copy_local_to_global(
-const Assembly::CopyData<2> &, const bool , const bool );
 template void TopographyProblem::TopographySolver<3>::copy_local_to_global(
 const Assembly::CopyData<3> &, const bool , const bool );
 

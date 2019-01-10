@@ -30,13 +30,17 @@ parameters(parameters_),
 // coefficients
 equation_coefficients{parameters.S,
                       1. / parameters.Rossby,
-                      1. / (parameters.Froude * parameters.Froude)},
+                      1. / (parameters.Froude * parameters.Froude),
+                      parameters.Alfven * parameters.Alfven,
+                      parameters.magReynolds},
 // model parameters
 rotation_vector((dim == 3? Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 gravity_vector((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_velocity_value(Point<dim>::unit_vector(0)),
+background_field_value((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_density_gradient((dim == 3? -Point<dim>::unit_vector(1): Point<dim>::unit_vector(dim-1))),
 background_velocity_gradient(),
+background_field_gradient(),
 // triangulation
 triangulation(Triangulation<dim>::maximum_smoothing),
 // finite element part
@@ -48,54 +52,71 @@ dof_handler(triangulation),
 computing_timer(std::cout, TimerOutput::summary, TimerOutput::wall_times)
 {
     std::cout << "Topography solver by S. Glane\n"
-              << "This program solves inviscid flow over topography in a stratified layer.\n"
-              << "The governing equations are\n\n"
-              << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
-              << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n";
+            << "This program solves inviscid flow over topography in a stratified layer.\n"
+            << "The governing equations are\n\n"
+            << "\t-- Continuity equation:\n\t\t div(rho V) = -S v . grad(rho_0),\n\n"
+            << "\t-- Incompressibility constraint:\n\t\t div(v) = 0,\n\n";
     if (parameters.include_rotation)
         std::cout << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v) + 2 / Ro  Omega x v\n";
     else
         std::cout << "\t-- Navier-Stokes equation:\n\t\t V . grad(v) + v . grad(V) + v . grad(v)\n";
-    std::cout << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g,\n\n"
-              << "The stratification parameter, S, the Rossby number, Ro, and the Froude number, Fr, are given by:\n\n";
+    std::cout << "\t\t\t\t= - grad(p) + (1 / Fr^2) rho g + \n"
+              << "\t\t\t\t  + Al^2 (B . grad(b) + b . grad(B) + b . grad(b)),\n\n"
+              << "\t-- Induction equation:\n\t\t div(grad(b)) + Rm (curl(v x B) + curl(V x b) + curl(v x b)) = 0\n\n"
+              << "The stratification parameter, S, the Rossby number, Ro, the Froude number, Fr, the Alfven number, Al,\n"
+              << "and the magnetic Reynolds number, Rm, are given by:\n\n";
 
     // generate a nice table of the equation coefficients
-    std::cout << "+-----------+---------------+---------------+\n"
-              << "|    S      |      Ro       |      Fr       |\n"
-              << "+-----------+---------------+---------------+\n"
-              << "| N^2 l / g | V / (Omega l) | V / sqrt(g l) |\n"
-              << "+-----------+---------------+---------------+\n";
+    std::cout << "+-----------+---------------+---------------+---------------+---------------+\n"
+            << "|    S      |      Ro       |      Fr       |      Al       |      Rm       |\n"
+            << "+-----------+---------------+---------------+---------------+---------------+\n"
+            << "| N^2 l / g | V / (Omega l) | V / sqrt(g l) |     Va / v    |   v l / eta   |\n"
+            << "+-----------+---------------+---------------+---------------+---------------+\n";
 
-   std::cout << std::endl << "You have chosen the following parameter set:";
+    std::cout << std::endl << "You have chosen the following parameter set:";
 
-   std::stringstream ss;
-   if (parameters.include_rotation)
-       ss << "+----------+----------+----------+----------+----------+\n"
-          << "|    k     |    h     |    S     |    Ro    |    Fr    |\n"
-          << "+----------+----------+----------+----------+----------+\n";
-   else
-       ss << "+----------+----------+----------+----------+\n"
-          << "|    k     |    h     |    S     |    Fr    |\n"
-          << "+----------+----------+----------+----------+\n";
-   ss << "| "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wavelength
-      << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
-      << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S;
-   if (parameters.include_rotation)
-       ss << " | "
-          << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby;
+    std::stringstream ss;
+    if (parameters.include_rotation)
+        ss << "+----------+----------+----------+----------+----------+----------+----------+\n"
+           << "|    k     |    h     |    S     |    Ro    |    Fr    |    Al    |    Rm    |\n"
+           << "+----------+----------+----------+----------+----------+----------+----------+\n"
+           << "| "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wavelength
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Rossby
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Alfven
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.magReynolds
+           << " |\n"
+           << "+----------+----------+----------+----------+----------+----------+----------+\n";
+    else
+        ss << "+----------+----------+----------+----------+----------+----------+\n"
+           << "|    k     |    h     |    S     |    Fr    |    Al    |    Rm    |\n"
+           << "+----------+----------+----------+----------+----------+----------+\n"
+           << "| "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.wavelength
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.amplitude
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.S
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Alfven
+           << " | "
+           << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.magReynolds
+           << " |\n"
+           << "+----------+----------+----------+----------+----------+----------+\n";
 
-   ss << " | "
-      << std::setw(8) << std::setprecision(1) << std::scientific << std::right << parameters.Froude
-      << " |\n";
-   if (parameters.include_rotation)
-       ss << "+----------+----------+----------+----------+----------+\n";
-   else
-       ss << "+----------+----------+----------+----------+\n";
-   std::cout << std::endl << ss.str() << std::endl;
-   std::cout << std::endl << std::fixed << std::flush;
+    std::cout << std::endl << ss.str() << std::endl;
+    std::cout << std::fixed << std::flush;
 
    const double omega = 2. * numbers::PI * parameters.Froude;
    const double N = std::sqrt(parameters.S);
@@ -262,5 +283,4 @@ void TopographySolver<dim>::run()
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template class TopographyProblem::TopographySolver<2>;
 template class TopographyProblem::TopographySolver<3>;

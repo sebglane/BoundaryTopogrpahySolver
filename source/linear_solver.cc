@@ -32,5 +32,4 @@ void TopographySolver<dim>::solve(const bool initial_step)
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::solve(const bool);
 template void TopographyProblem::TopographySolver<3>::solve(const bool);

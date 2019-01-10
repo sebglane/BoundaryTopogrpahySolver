@@ -228,5 +228,4 @@ void TopographySolver<3>::make_grid()
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::make_grid();
 template void TopographyProblem::TopographySolver<3>::make_grid();

@@ -257,10 +257,7 @@ void TopographySolver<dim>::setup_system_matrix
 }  // namespace TopographyProblem
 
 // explicit instantiation
-template void TopographyProblem::TopographySolver<2>::setup_dofs();
 template void TopographyProblem::TopographySolver<3>::setup_dofs();
 
-template void TopographyProblem::TopographySolver<2>::setup_system_matrix
-(const std::vector<types::global_dof_index> &);
 template void TopographyProblem::TopographySolver<3>::setup_system_matrix
 (const std::vector<types::global_dof_index> &);
